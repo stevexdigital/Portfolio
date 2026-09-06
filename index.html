@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Automation Portfolio</title>
+<link rel="icon" id="favicon" href="">
 <meta name="description" content="Portfolio of AI agent and workflow automation builds across GoHighLevel, n8n, and Supabase.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -100,6 +101,13 @@
   @keyframes scroll-left{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
   .marquee-item{ font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--text-dim); white-space:nowrap; display:flex; align-items:center; gap:10px; }
   .marquee-item .sep{ color:var(--accent); }
+  .brand-mark{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:22px; height:22px; border-radius:6px; flex-shrink:0;
+    font-family:'IBM Plex Mono',monospace; font-size:0.68rem; font-weight:600;
+    color:#fff; letter-spacing:-0.02em;
+  }
+  .tag-chip{ display:inline-flex; align-items:center; gap:8px; font-size:0.9rem; color:var(--text); }
 
   /* ---------- SECTIONS ---------- */
   .section{ padding:90px 0; }
@@ -282,6 +290,37 @@
     return name.trim().split(/\s+/).slice(0,2).map(w => w[0]?.toUpperCase() || '').join('');
   }
 
+  // ---- Brand monogram chips (used since exact trademarked logos aren't available here) ----
+  const BRAND_COLORS = {
+    'supabase': '#3ECF8E', 'n8n': '#EA4B71', 'lovable': '#FF3D71', 'groq': '#F55036',
+    'claude api': '#D97757', 'claude': '#D97757', 'gemini': '#4285F4', 'vercel': '#111111',
+    'gohighlevel': '#0B9B7D', 'github': '#24292E'
+  };
+  const FALLBACK_PALETTE = ['#6FC3D9','#E8954A','#8FE0A8','#B48EE0','#E85D75','#5CA0D3'];
+  function hashColor(label){
+    let h = 0;
+    for (let i = 0; i < label.length; i++) h = (h * 31 + label.charCodeAt(i)) >>> 0;
+    return FALLBACK_PALETTE[h % FALLBACK_PALETTE.length];
+  }
+  function brandColor(label){ return BRAND_COLORS[label.toLowerCase()] || hashColor(label); }
+  function monogram(label){
+    const trimmed = label.trim();
+    if (trimmed.includes(' ')) return initials(trimmed);
+    return trimmed.slice(0,2);
+  }
+  function brandMark(label){
+    return `<span class="brand-mark" style="background:${brandColor(label)}">${esc(monogram(label))}</span>`;
+  }
+  function setFavicon(brandName){
+    const initialsText = esc(initials(brandName));
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <rect width="64" height="64" rx="14" fill="#0F2942"/>
+      <rect x="4" y="4" width="56" height="56" rx="10" fill="#E8954A"/>
+      <text x="32" y="42" font-family="monospace" font-size="26" font-weight="600" fill="#12233A" text-anchor="middle">${initialsText}</text>
+    </svg>`;
+    document.getElementById('favicon').href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+  }
+
   function renderSolutions(list){
     return (list||[]).map((s,i) => `
       <div class="solution-card">
@@ -335,6 +374,7 @@
       const c = Object.fromEntries((content || []).map(r => [r.key, r.value]));
 
       document.getElementById('nav-brand').textContent = c.brand_name || 'Portfolio';
+      setFavicon(c.brand_name || 'Portfolio');
       document.title = (c.brand_name ? c.brand_name + ' — ' : '') + 'Automation Portfolio';
       document.getElementById('hero-name').textContent = c.hero_name || '';
       document.getElementById('hero-role').textContent = c.hero_role || '';
@@ -371,12 +411,12 @@
 
       // Marquee (duplicated once for seamless loop)
       const stackLabels = (stack||[]).map(s => s.label);
-      const marqueeItems = (list) => list.map(l => `<span class="marquee-item">${esc(l)}<span class="sep">/</span></span>`).join('');
+      const marqueeItems = (list) => list.map(l => `<span class="marquee-item">${brandMark(l)}${esc(l)}<span class="sep">/</span></span>`).join('');
       document.getElementById('marquee-track').innerHTML = marqueeItems(stackLabels) + marqueeItems(stackLabels);
 
       // Stack tags (in Stack section)
       document.getElementById('stack-container').innerHTML = (stack||[])
-        .map(s => `<span class="tag" style="font-size:0.95rem;">${esc(s.label)}</span>`).join('');
+        .map(s => `<span class="tag-chip">${brandMark(s.label)}${esc(s.label)}</span>`).join('');
 
       document.getElementById('solutions-container').innerHTML = renderSolutions(solutions);
       document.getElementById('projects-container').innerHTML = (projects||[]).map(renderProject).join('') || '<p class="load-note">No projects yet.</p>';
