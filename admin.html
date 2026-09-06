@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Portfolio CMS</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F2942; --panel:#123554; --panel-2:#0D2438; --line:#2C5578;
+    --accent:#E8954A; --text:#EDF3F8; --text-dim:#8FB0CC; --radius:4px;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'IBM Plex Sans',sans-serif; line-height:1.5; padding-bottom: 80px;
+  }
+  h1,h2{ font-family:'Space Grotesk',sans-serif; font-weight:600; margin:0 0 4px; }
+  .mono{ font-family:'IBM Plex Mono',monospace; }
+  .wrap{ max-width: 880px; margin:0 auto; padding: 40px 24px; }
+
+  /* ---- login ---- */
+  #login-screen{ max-width: 380px; margin: 90px auto; padding: 0 24px; }
+  input, textarea, select{
+    width:100%; background:var(--panel-2); border:1px solid var(--line);
+    color:var(--text); padding:10px 12px; border-radius:var(--radius);
+    font-family:inherit; font-size:0.92rem; margin-top:6px;
+  }
+  textarea{ min-height: 70px; resize: vertical; }
+  label{ font-size:0.82rem; color:var(--text-dim); display:block; margin-top:14px; }
+  button{
+    font-family:'IBM Plex Sans',sans-serif; font-weight:500; font-size:0.9rem;
+    padding:10px 18px; border-radius:var(--radius); border:1px solid var(--line);
+    background:var(--panel); color:var(--text); cursor:pointer;
+  }
+  button.primary{ background:var(--accent); color:#12233A; border-color:var(--accent); }
+  button.danger{ border-color:#7A3030; color:#E89A9A; background:transparent; }
+  button:hover{ filter:brightness(1.1); }
+  .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  #error-msg{ color:var(--accent); font-size:0.85rem; margin-top:10px; }
+
+  /* ---- shell ---- */
+  header{
+    position:sticky; top:0; background:rgba(15,41,66,0.92); backdrop-filter: blur(6px);
+    border-bottom:1px solid var(--line); padding:16px 24px;
+    display:flex; justify-content:space-between; align-items:center; z-index:10;
+  }
+  nav{ display:flex; gap:6px; flex-wrap:wrap; margin-top:18px; }
+  nav button{ font-size:0.85rem; }
+  nav button.active{ background:var(--accent); color:#12233A; border-color:var(--accent); }
+
+  section.panel{ display:none; margin-top:32px; }
+  section.panel.active{ display:block; }
+
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px; margin-bottom:14px;
+  }
+  .card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  .field-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .field-grid.single{ grid-template-columns: 1fr; }
+  .save-note{ font-size:0.8rem; color:var(--text-dim); margin-top:8px; min-height: 1.2em; }
+  .add-form{ border:1px dashed var(--line); border-radius:var(--radius); padding:20px; margin-top:20px; }
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:var(--accent); color:#12233A; padding:10px 20px; border-radius:var(--radius);
+    font-size:0.88rem; font-weight:500; opacity:0; transition:opacity .25s; pointer-events:none;
+  }
+  .toast.show{ opacity:1; }
+  .hint{ font-size:0.78rem; color:var(--text-dim); margin-top:4px; }
+  img.preview{ max-width:160px; border-radius:var(--radius); border:1px solid var(--line); margin-top:10px; display:block; }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="login-screen">
+  <h1>Admin login</h1>
+  <p class="mono" style="color:var(--text-dim); font-size:0.85rem;">Portfolio CMS</p>
+  <label>Email</label>
+  <input type="email" id="login-email" autocomplete="username">
+  <label>Password</label>
+  <input type="password" id="login-password" autocomplete="current-password">
+  <div class="row" style="margin-top:20px;">
+    <button class="primary" id="login-btn">Log in</button>
+  </div>
+  <div id="error-msg"></div>
+</div>
+
+<!-- ================= APP SHELL ================= -->
+<div id="app-shell" style="display:none;">
+  <header>
+    <div>
+      <div class="mono" style="font-size:0.8rem; color:var(--text-dim);">Portfolio CMS</div>
+      <div id="whoami" style="font-size:0.9rem;"></div>
+    </div>
+    <button id="logout-btn">Log out</button>
+  </header>
+  <div class="wrap">
+    <nav>
+      <button data-panel="panel-site" class="active">Site text</button>
+      <button data-panel="panel-hero-badges">Hero badges</button>
+      <button data-panel="panel-solutions">Solutions</button>
+      <button data-panel="panel-projects">Projects</button>
+      <button data-panel="panel-stack">Stack</button>
+      <button data-panel="panel-stats">About stats</button>
+      <button data-panel="panel-photo">Hero photo</button>
+    </nav>
+
+    <section class="panel active" id="panel-site">
+      <h2>Site text</h2>
+      <p class="hint">These map directly to the hero, contact section, and footer on your live site.</p>
+      <div id="site-content-fields" class="card"></div>
+      <div class="row" style="margin-top:14px;">
+        <button class="primary" id="save-site-content">Save all</button>
+        <span class="save-note" id="site-content-note"></span>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-hero-badges">
+      <h2>Hero badges</h2>
+      <p class="hint">The small floating labels next to your hero photo, e.g. "n8n Builder".</p>
+      <div id="hero-badges-list"></div>
+      <div class="add-form">
+        <label>New badge label</label>
+        <input id="new-badge-label">
+        <button class="primary" style="margin-top:12px;" id="add-badge-btn">Add badge</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-solutions">
+      <h2>Solutions ("what I build")</h2>
+      <div id="solutions-list"></div>
+      <div class="add-form">
+        <label>Title</label><input id="new-solution-title">
+        <label>Description</label><textarea id="new-solution-desc"></textarea>
+        <button class="primary" style="margin-top:12px;" id="add-solution-btn">Add solution</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-projects">
+      <h2>Projects</h2>
+      <p class="hint">For "Pipeline" layout, list steps separated by commas. For "Features" layout, one feature per line as <span class="mono">label | description</span>.</p>
+      <div id="projects-list"></div>
+      <div class="add-form">
+        <label>Title</label><input id="new-project-title">
+        <label>Who / context</label><input id="new-project-who">
+        <label>Status</label>
+        <select id="new-project-status"><option value="live">live</option><option value="in progress" selected>in progress</option></select>
+        <label>Description</label><textarea id="new-project-desc"></textarea>
+        <label>Layout</label>
+        <select id="new-project-layout"><option value="pipeline" selected>pipeline</option><option value="features">features</option></select>
+        <label>Pipeline steps (comma-separated) — leave blank if using Features</label>
+        <input id="new-project-nodes">
+        <label>Features (one per line: label | description) — leave blank if using Pipeline</label>
+        <textarea id="new-project-features"></textarea>
+        <label>Tags (comma-separated)</label>
+        <input id="new-project-tags">
+        <label>Link URL (optional)</label>
+        <input id="new-project-link">
+        <button class="primary" style="margin-top:12px;" id="add-project-btn">Add project</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-stack">
+      <h2>Tools / stack</h2>
+      <div id="stack-list"></div>
+      <div class="add-form">
+        <label>New tool name</label>
+        <input id="new-stack-label">
+        <button class="primary" style="margin-top:12px;" id="add-stack-btn">Add tool</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-stats">
+      <h2>About stats</h2>
+      <p class="hint">E.g. "Systems built" / "4". Use real numbers — these show as-is on the site.</p>
+      <div id="stats-list"></div>
+      <div class="add-form">
+        <label>Label</label><input id="new-stat-label">
+        <label>Value</label><input id="new-stat-value">
+        <button class="primary" style="margin-top:12px;" id="add-stat-btn">Add stat</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-photo">
+      <h2>Hero photo</h2>
+      <p class="hint">Uploads to your Supabase storage bucket and updates the site automatically.</p>
+      <input type="file" id="photo-input" accept="image/*">
+      <div class="row" style="margin-top:12px;">
+        <button class="primary" id="upload-photo-btn">Upload & use this photo</button>
+        <span class="save-note" id="photo-note"></span>
+      </div>
+      <img id="photo-preview" class="preview" style="display:none;">
+    </section>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+  // ---- EDIT THESE TWO LINES with your Supabase project's values (same as index.html) ----
+  const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+  const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+  // -----------------------------------------------------------------------------------------
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const loginScreen = document.getElementById('login-screen');
+  const appShell = document.getElementById('app-shell');
+  const errorMsg = document.getElementById('error-msg');
+
+  function toast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  // ---------- AUTH ----------
+  async function checkSession(){
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session){
+      loginScreen.style.display = 'none';
+      appShell.style.display = 'block';
+      document.getElementById('whoami').textContent = session.user.email;
+      loadAll();
+    } else {
+      loginScreen.style.display = 'block';
+      appShell.style.display = 'none';
+    }
+  }
+
+  document.getElementById('login-btn').addEventListener('click', async () => {
+    errorMsg.textContent = '';
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error){ errorMsg.textContent = error.message; return; }
+    checkSession();
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    checkSession();
+  });
+
+  // ---------- NAV ----------
+  document.querySelectorAll('nav button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('section.panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.panel).classList.add('active');
+    });
+  });
+
+  function esc(str){ const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
+
+  // ---------- SITE CONTENT (key/value form) ----------
+  const SITE_FIELDS = [
+    ['brand_name','Brand / nav name'],['hero_name','Hero: your name'],['hero_role','Hero: role/title'],
+    ['hero_location','Hero: location line'],['hero_sub','Hero: subheading', true],
+    ['cta_primary_label','Primary button label'],['cta_secondary_label','Secondary button label'],
+    ['contact_heading','Contact heading'],['contact_email','Contact email'],['contact_linkedin_url','LinkedIn URL'],
+    ['footer_name','Footer name'],['footer_location','Footer location']
+  ];
+
+  async function loadSiteContent(){
+    const { data } = await supabase.from('site_content').select('key,value');
+    const map = Object.fromEntries((data||[]).map(r => [r.key, r.value]));
+    const container = document.getElementById('site-content-fields');
+    container.innerHTML = SITE_FIELDS.map(([key,label,isLong]) => `
+      <label>${esc(label)}</label>
+      ${isLong ? `<textarea data-key="${key}">${esc(map[key]||'')}</textarea>`
+               : `<input data-key="${key}" value="${esc(map[key]||'')}">`}
+    `).join('');
+  }
+
+  document.getElementById('save-site-content').addEventListener('click', async () => {
+    const inputs = document.querySelectorAll('#site-content-fields [data-key]');
+    const rows = Array.from(inputs).map(el => ({ key: el.dataset.key, value: el.value }));
+    const { error } = await supabase.from('site_content').upsert(rows, { onConflict: 'key' });
+    document.getElementById('site-content-note').textContent = error ? 'Error: ' + error.message : 'Saved.';
+    if (!error) toast('Saved');
+  });
+
+  // ---------- GENERIC SIMPLE LIST (hero_badges, stack_items) ----------
+  function simpleList(table, containerId, fieldKey, placeholder){
+    return {
+      async load(){
+        const { data } = await supabase.from(table).select('*').order('sort_order');
+        const container = document.getElementById(containerId);
+        container.innerHTML = (data||[]).map(row => `
+          <div class="card" data-id="${row.id}">
+            <div class="row">
+              <input style="flex:1" data-field="${fieldKey}" value="${esc(row[fieldKey])}">
+              <input type="number" style="width:70px" data-field="sort_order" value="${row.sort_order}" title="order">
+              <button data-save>Save</button>
+              <button class="danger" data-delete>Delete</button>
+            </div>
+          </div>
+        `).join('') || `<p class="hint">${placeholder}</p>`;
+
+        container.querySelectorAll('[data-save]').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const card = e.target.closest('.card');
+            const id = card.dataset.id;
+            const payload = {};
+            card.querySelectorAll('[data-field]').forEach(el => {
+              payload[el.dataset.field] = el.type === 'number' ? Number(el.value) : el.value;
+            });
+            const { error } = await supabase.from(table).update(payload).eq('id', id);
+            toast(error ? 'Error: ' + error.message : 'Saved');
+          });
+        });
+        container.querySelectorAll('[data-delete]').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const card = e.target.closest('.card');
+            if (!confirm('Delete this item?')) return;
+            const { error } = await supabase.from(table).delete().eq('id', card.dataset.id);
+            if (!error){ card.remove(); toast('Deleted'); } else toast('Error: ' + error.message);
+          });
+        });
+      }
+    };
+  }
+
+  const heroBadges = simpleList('hero_badges', 'hero-badges-list', 'label', 'No badges yet.');
+  const stackItems = simpleList('stack_items', 'stack-list', 'label', 'No tools yet.');
+
+  document.getElementById('add-badge-btn').addEventListener('click', async () => {
+    const label = document.getElementById('new-badge-label').value.trim();
+    if (!label) return;
+    const { error } = await supabase.from('hero_badges').insert({ label, sort_order: 99 });
+    if (!error){ document.getElementById('new-badge-label').value=''; heroBadges.load(); toast('Added'); }
+    else toast('Error: ' + error.message);
+  });
+
+  document.getElementById('add-stack-btn').addEventListener('click', async () => {
+    const label = document.getElementById('new-stack-label').value.trim();
+    if (!label) return;
+    const { error } = await supabase.from('stack_items').insert({ label, sort_order: 99 });
+    if (!error){ document.getElementById('new-stack-label').value=''; stackItems.load(); toast('Added'); }
+    else toast('Error: ' + error.message);
+  });
+
+  // ---------- SOLUTIONS ----------
+  async function loadSolutions(){
+    const { data } = await supabase.from('solutions').select('*').order('sort_order');
+    const container = document.getElementById('solutions-list');
+    container.innerHTML = (data||[]).map(row => `
+      <div class="card" data-id="${row.id}">
+        <label>Title</label><input data-field="title" value="${esc(row.title)}">
+        <label>Description</label><textarea data-field="description">${esc(row.description)}</textarea>
+        <div class="row" style="margin-top:10px;">
+          <button data-save>Save</button>
+          <button class="danger" data-delete>Delete</button>
+        </div>
+      </div>
+    `).join('') || `<p class="hint">No solutions yet.</p>`;
+
+    container.querySelectorAll('[data-save]').forEach(btn => btn.addEventListener('click', async (e) => {
+      const card = e.target.closest('.card');
+      const payload = { title: card.querySelector('[data-field="title"]').value, description: card.querySelector('[data-field="description"]').value };
+      const { error } = await supabase.from('solutions').update(payload).eq('id', card.dataset.id);
+      toast(error ? 'Error: ' + error.message : 'Saved');
+    }));
+    container.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async (e) => {
+      const card = e.target.closest('.card');
+      if (!confirm('Delete this solution?')) return;
+      const { error } = await supabase.from('solutions').delete().eq('id', card.dataset.id);
+      if (!error){ card.remove(); toast('Deleted'); } else toast('Error: ' + error.message);
+    }));
+  }
+
+  document.getElementById('add-solution-btn').addEventListener('click', async () => {
+    const title = document.getElementById('new-solution-title').value.trim();
+    const description = document.getElementById('new-solution-desc').value.trim();
+    if (!title || !description) return;
+    const { error } = await supabase.from('solutions').insert({ title, description, sort_order: 99 });
+    if (!error){
+      document.getElementById('new-solution-title').value='';
+      document.getElementById('new-solution-desc').value='';
+      loadSolutions(); toast('Added');
+    } else toast('Error: ' + error.message);
+  });
+
+  // ---------- ABOUT STATS ----------
+  async function loadStats(){
+    const { data } = await supabase.from('about_stats').select('*').order('sort_order');
+    const container = document.getElementById('stats-list');
+    container.innerHTML = (data||[]).map(row => `
+      <div class="card" data-id="${row.id}">
+        <div class="field-grid">
+          <div><label>Label</label><input data-field="label" value="${esc(row.label)}"></div>
+          <div><label>Value</label><input data-field="value" value="${esc(row.value)}"></div>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <button data-save>Save</button>
+          <button class="danger" data-delete>Delete</button>
+        </div>
+      </div>
+    `).join('') || `<p class="hint">No stats yet.</p>`;
+
+    container.querySelectorAll('[data-save]').forEach(btn => btn.addEventListener('click', async (e) => {
+      const card = e.target.closest('.card');
+      const payload = { label: card.querySelector('[data-field="label"]').value, value: card.querySelector('[data-field="value"]').value };
+      const { error } = await supabase.from('about_stats').update(payload).eq('id', card.dataset.id);
+      toast(error ? 'Error: ' + error.message : 'Saved');
+    }));
+    container.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async (e) => {
+      const card = e.target.closest('.card');
+      if (!confirm('Delete this stat?')) return;
+      const { error } = await supabase.from('about_stats').delete().eq('id', card.dataset.id);
+      if (!error){ card.remove(); toast('Deleted'); } else toast('Error: ' + error.message);
+    }));
+  }
+
+  document.getElementById('add-stat-btn').addEventListener('click', async () => {
+    const label = document.getElementById('new-stat-label').value.trim();
+    const value = document.getElementById('new-stat-value').value.trim();
+    if (!label || !value) return;
+    const { error } = await supabase.from('about_stats').insert({ label, value, sort_order: 99 });
+    if (!error){
+      document.getElementById('new-stat-label').value='';
+      document.getElementById('new-stat-value').value='';
+      loadStats(); toast('Added');
+    } else toast('Error: ' + error.message);
+  });
+
+  // ---------- PROJECTS ----------
+  function nodesToCsv(nodes){ return Array.isArray(nodes) ? nodes.join(', ') : ''; }
+  function csvToNodes(csv){ return csv.split(',').map(s => s.trim()).filter(Boolean); }
+  function featuresToLines(features){
+    return Array.isArray(features) ? features.map(f => `${f.label} | ${f.desc}`).join('\n') : '';
+  }
+  function linesToFeatures(text){
+    return text.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+      const [label, ...rest] = l.split('|');
+      return { label: (label||'').trim(), desc: rest.join('|').trim() };
+    });
+  }
+
+  async function loadProjects(){
+    const { data } = await supabase.from('projects').select('*').order('sort_order');
+    const container = document.getElementById('projects-list');
+    container.innerHTML = (data||[]).map(row => `
+      <div class="card" data-id="${row.id}">
+        <div class="field-grid">
+          <div><label>Title</label><input data-field="title" value="${esc(row.title)}"></div>
+          <div><label>Who / context</label><input data-field="who" value="${esc(row.who)}"></div>
+        </div>
+        <div class="field-grid">
+          <div><label>Status</label>
+            <select data-field="status">
+              <option value="live" ${row.status==='live'?'selected':''}>live</option>
+              <option value="in progress" ${row.status!=='live'?'selected':''}>in progress</option>
+            </select>
+          </div>
+          <div><label>Layout</label>
+            <select data-field="layout">
+              <option value="pipeline" ${row.layout==='pipeline'?'selected':''}>pipeline</option>
+              <option value="features" ${row.layout==='features'?'selected':''}>features</option>
+            </select>
+          </div>
+        </div>
+        <label>Description</label><textarea data-field="description">${esc(row.description)}</textarea>
+        <label>Pipeline steps (comma-separated)</label>
+        <input data-field="nodes_csv" value="${esc(nodesToCsv(row.nodes))}">
+        <label>Features (one per line: label | description)</label>
+        <textarea data-field="features_lines">${esc(featuresToLines(row.features))}</textarea>
+        <label>Tags (comma-separated)</label>
+        <input data-field="tags_csv" value="${esc((row.tags||[]).join(', '))}">
+        <label>Link URL</label>
+        <input data-field="link_url" value="${esc(row.link_url)}">
+        <div class="row" style="margin-top:12px;">
+          <button data-save>Save</button>
+          <button class="danger" data-delete>Delete</button>
+        </div>
+      </div>
+    `).join('') || `<p class="hint">No projects yet.</p>`;
+
+    container.querySelectorAll('[data-save]').forEach(btn => btn.addEventListener('click', async (e) => {
+      const card = e.target.closest('.card');
+      const get = (f) => card.querySelector(`[data-field="${f}"]`).value;
+      const payload = {
+        title: get('title'), who: get('who'), status: get('status'), layout: get('layout'),
+        description: get('description'),
+        nodes: get('nodes_csv') ? csvToNodes(get('nodes_csv')) : null,
+        features: get('features_lines') ? linesToFeatures(get('features_lines')) : null,
+        tags: get('tags_csv') ? get('tags_csv').split(',').map(s=>s.trim()).filter(Boolean) : [],
+        link_url: get('link_url') || null
+      };
+      const { error } = await supabase.from('projects').update(payload).eq('id', card.dataset.id);
+      toast(error ? 'Error: ' + error.message : 'Saved');
+    }));
+    container.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async (e) => {
+      const card = e.target.closest('.card');
+      if (!confirm('Delete this project?')) return;
+      const { error } = await supabase.from('projects').delete().eq('id', card.dataset.id);
+      if (!error){ card.remove(); toast('Deleted'); } else toast('Error: ' + error.message);
+    }));
+  }
+
+  document.getElementById('add-project-btn').addEventListener('click', async () => {
+    const title = document.getElementById('new-project-title').value.trim();
+    const description = document.getElementById('new-project-desc').value.trim();
+    if (!title || !description) return;
+    const payload = {
+      title,
+      who: document.getElementById('new-project-who').value.trim(),
+      status: document.getElementById('new-project-status').value,
+      layout: document.getElementById('new-project-layout').value,
+      description,
+      nodes: document.getElementById('new-project-nodes').value ? csvToNodes(document.getElementById('new-project-nodes').value) : null,
+      features: document.getElementById('new-project-features').value ? linesToFeatures(document.getElementById('new-project-features').value) : null,
+      tags: document.getElementById('new-project-tags').value.split(',').map(s=>s.trim()).filter(Boolean),
+      link_url: document.getElementById('new-project-link').value.trim() || null,
+      sort_order: 99
+    };
+    const { error } = await supabase.from('projects').insert(payload);
+    if (!error){
+      ['title','who','desc','nodes','features','tags','link'].forEach(f => {
+        const el = document.getElementById('new-project-'+f);
+        if (el) el.value = '';
+      });
+      loadProjects(); toast('Added');
+    } else toast('Error: ' + error.message);
+  });
+
+  // ---------- HERO PHOTO ----------
+  document.getElementById('upload-photo-btn').addEventListener('click', async () => {
+    const fileInput = document.getElementById('photo-input');
+    const note = document.getElementById('photo-note');
+    if (!fileInput.files[0]){ note.textContent = 'Choose a file first.'; return; }
+    const file = fileInput.files[0];
+    const path = 'hero.' + file.name.split('.').pop();
+    note.textContent = 'Uploading…';
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+    if (uploadError){ note.textContent = 'Error: ' + uploadError.message; return; }
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+    const publicUrl = urlData.publicUrl + '?t=' + Date.now(); // cache-bust
+    const { error: saveError } = await supabase.from('site_content').upsert({ key: 'hero_photo_url', value: publicUrl }, { onConflict: 'key' });
+    note.textContent = saveError ? 'Error: ' + saveError.message : 'Uploaded and set as your hero photo.';
+    if (!saveError){
+      document.getElementById('photo-preview').src = publicUrl;
+      document.getElementById('photo-preview').style.display = 'block';
+      toast('Photo updated');
+    }
+  });
+
+  // ---------- LOAD EVERYTHING ----------
+  async function loadAll(){
+    await Promise.all([
+      loadSiteContent(), heroBadges.load(), loadSolutions(), loadProjects(), stackItems.load(), loadStats()
+    ]);
+    const { data } = await supabase.from('site_content').select('value').eq('key','hero_photo_url').maybeSingle();
+    if (data?.value){
+      document.getElementById('photo-preview').src = data.value;
+      document.getElementById('photo-preview').style.display = 'block';
+    }
+  }
+
+  checkSession();
+</script>
+</body>
+</html>
