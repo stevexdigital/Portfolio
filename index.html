@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Automation Portfolio — Systems that answer, sort, and route</title>
+<title>Automation Portfolio</title>
 <meta name="description" content="Portfolio of AI agent and workflow automation builds across GoHighLevel, n8n, and Supabase.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,137 +16,148 @@
     --grid-line: rgba(143,176,204,0.08);
     --line: #2C5578;
     --accent: #E8954A;
-    --accent-dim: #C97A38;
+    --accent-soft: rgba(232,149,74,0.12);
     --trace: #6FC3D9;
     --text: #EDF3F8;
     --text-dim: #8FB0CC;
     --text-faint: #5C7C99;
-    --radius: 3px;
-    --maxw: 1120px;
+    --radius: 4px;
+    --maxw: 1160px;
   }
-
-  *{ box-sizing: border-box; }
-  html{ scroll-behavior: smooth; }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
   body{
-    margin:0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 16px;
-    line-height: 1.6;
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'IBM Plex Sans',sans-serif; font-size:16px; line-height:1.6;
     background-image:
       linear-gradient(var(--grid-line) 1px, transparent 1px),
       linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
     background-size: 40px 40px;
   }
-
-  h1,h2,h3{
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 600;
-    margin: 0;
-    letter-spacing: -0.01em;
-  }
-
-  .mono{ font-family: 'IBM Plex Mono', monospace; }
-  a{ color: inherit; }
-  .wrap{ max-width: var(--maxw); margin: 0 auto; padding: 0 32px; }
-
-  a:focus-visible, button:focus-visible{
-    outline: 2px solid var(--accent);
-    outline-offset: 3px;
-  }
-
-  @media (prefers-reduced-motion: reduce){
-    *{ animation: none !important; transition: none !important; }
-  }
+  h1,h2,h3{ font-family:'Space Grotesk',sans-serif; font-weight:600; margin:0; letter-spacing:-0.01em; }
+  .mono{ font-family:'IBM Plex Mono',monospace; }
+  a{ color:inherit; }
+  .wrap{ max-width:var(--maxw); margin:0 auto; padding:0 32px; }
+  a:focus-visible, button:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
 
   /* ---------- NAV ---------- */
-  header{
-    position: sticky; top:0; z-index: 20;
-    background: rgba(15,41,66,0.85);
-    backdrop-filter: blur(6px);
-    border-bottom: 1px solid var(--line);
-  }
-  nav.wrap{ display:flex; align-items:center; justify-content:space-between; height: 64px; }
+  header{ position:sticky; top:0; z-index:20; background:rgba(15,41,66,0.85); backdrop-filter:blur(6px); border-bottom:1px solid var(--line); }
+  nav.wrap{ display:flex; align-items:center; justify-content:space-between; height:64px; }
   .brand{ font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:1.1rem; display:flex; align-items:center; gap:8px; }
-  .brand .dot{ width:8px;height:8px;border-radius:50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
-  .navlinks{ display:flex; gap:28px; font-size:0.92rem; }
-  .navlinks a{ text-decoration:none; color: var(--text-dim); transition: color .15s; }
-  .navlinks a:hover{ color: var(--text); }
+  .brand .dot{ width:8px;height:8px;border-radius:50%; background:var(--accent); box-shadow:0 0 8px var(--accent); }
+  .navlinks{ display:flex; align-items:center; gap:28px; font-size:0.92rem; }
+  .navlinks a{ text-decoration:none; color:var(--text-dim); transition:color .15s; }
+  .navlinks a:hover{ color:var(--text); }
+  .btn{ display:inline-block; padding:11px 20px; border-radius:var(--radius); text-decoration:none; font-size:0.9rem; font-weight:500; transition:transform .12s ease, border-color .12s ease; white-space:nowrap; }
+  .btn-primary{ background:var(--accent); color:#12233A; }
+  .btn-primary:hover{ transform:translateY(-1px); }
+  .btn-ghost{ border:1px solid var(--line); color:var(--text); }
+  .btn-ghost:hover{ border-color:var(--text-dim); }
 
   /* ---------- HERO ---------- */
-  .hero{ padding: 88px 0 96px; }
-  .hero-grid{ display:grid; grid-template-columns: 1.1fr 1fr; gap: 56px; align-items:center; }
-  .hero h1{ font-size: clamp(2.1rem, 4vw, 3.1rem); line-height: 1.15; max-width: 16ch; }
-  .hero p.sub{ color: var(--text-dim); font-size: 1.05rem; max-width: 46ch; margin-top: 20px; }
-  .hero-cta{ margin-top: 32px; display:flex; gap:16px; flex-wrap:wrap; }
-  .btn{ display:inline-block; padding: 12px 22px; border-radius: var(--radius); text-decoration:none; font-size: 0.95rem; font-weight: 500; transition: transform .12s ease, border-color .12s ease; }
-  .btn-primary{ background: var(--accent); color: #12233A; }
-  .btn-primary:hover{ transform: translateY(-1px); }
-  .btn-ghost{ border: 1px solid var(--line); color: var(--text); }
-  .btn-ghost:hover{ border-color: var(--text-dim); }
+  .hero{ padding:80px 0 100px; }
+  .hero-grid{ display:grid; grid-template-columns:1.05fr 1fr; gap:56px; align-items:center; }
+  .eyebrow{ display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--accent); border:1px solid var(--line); padding:5px 12px; border-radius:999px; margin-bottom:20px; }
+  .eyebrow .dot{ width:6px;height:6px;border-radius:50%; background:var(--accent); }
+  .hero h1{ font-size:clamp(2.1rem, 4vw, 3rem); line-height:1.15; }
+  .hero h1 .role{ color:var(--accent); }
+  .hero-location{ font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--text-faint); margin-top:10px; }
+  .hero p.sub{ color:var(--text-dim); font-size:1.02rem; max-width:48ch; margin-top:18px; }
+  .hero-cta{ margin-top:30px; display:flex; gap:14px; flex-wrap:wrap; }
 
-  .hero-diagram{ width:100%; height:auto; }
-  .trace-line{ fill:none; stroke: var(--trace); stroke-width: 1.5; stroke-dasharray: 400; stroke-dashoffset: 400; animation: draw 1.8s ease forwards; }
-  .trace-line.d1{ animation-delay: .1s; }
-  .trace-line.d2{ animation-delay: .5s; }
-  .trace-line.d3{ animation-delay: .9s; }
-  @keyframes draw{ to{ stroke-dashoffset: 0; } }
-  .node-rect{ fill: var(--bg-panel); stroke: var(--line); stroke-width: 1; }
-  .node-label{ fill: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
-  .node-dot{ fill: var(--accent); }
+  .photo-stage{ position:relative; width:100%; max-width:380px; margin:0 auto; aspect-ratio:1/1; }
+  .ring-svg{ position:absolute; inset:0; width:100%; height:100%; }
+  .ring-svg circle{ fill:none; stroke:var(--line); stroke-width:1; }
+  .ring-svg circle.dash{ stroke:var(--trace); stroke-dasharray:2 6; opacity:0.6; }
+  .photo-wrap{
+    position:absolute; inset:9%; border-radius:50%; overflow:hidden;
+    background:var(--bg-panel); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .photo-wrap img{ width:100%; height:100%; object-fit:cover; }
+  .photo-placeholder{ font-family:'Space Grotesk',sans-serif; font-size:3rem; font-weight:600; color:var(--text-faint); }
+  .badge-chip{
+    position:absolute; font-family:'IBM Plex Mono',monospace; font-size:0.72rem;
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:999px;
+    padding:7px 14px; white-space:nowrap; display:flex; align-items:center; gap:6px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.25);
+  }
+  .badge-chip .dot{ width:5px;height:5px;border-radius:50%; background:var(--accent); }
+  .badge-chip.b1{ top:6%; left:-6%; }
+  .badge-chip.b2{ top:46%; right:-10%; }
+  .badge-chip.b3{ bottom:6%; left:2%; }
 
-  @media (max-width: 860px){ .hero-grid{ grid-template-columns: 1fr; } .hero{ padding: 56px 0 64px; } }
+  @media (max-width:860px){
+    .hero-grid{ grid-template-columns:1fr; }
+    .hero{ padding:56px 0 64px; }
+    .photo-stage{ margin-top:20px; }
+  }
+
+  /* ---------- MARQUEE ---------- */
+  .marquee-band{ border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--bg-panel-2); overflow:hidden; padding:16px 0; }
+  .marquee-track{ display:flex; gap:48px; width:max-content; animation:scroll-left 28s linear infinite; }
+  @keyframes scroll-left{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
+  .marquee-item{ font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--text-dim); white-space:nowrap; display:flex; align-items:center; gap:10px; }
+  .marquee-item .sep{ color:var(--accent); }
 
   /* ---------- SECTIONS ---------- */
-  .section{ padding: 88px 0; border-top: 1px solid var(--line); }
-  .section-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom: 48px; gap: 24px; flex-wrap: wrap; }
-  .section-head h2{ font-size: 1.7rem; }
-  .section-head .count{ color: var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size: 0.85rem; }
+  .section{ padding:90px 0; }
+  .section-head{ margin-bottom:48px; max-width:60ch; }
+  .section-head .eyebrow{ margin-bottom:14px; }
+  .section-head h2{ font-size:1.8rem; }
+  .section-head p{ color:var(--text-dim); margin-top:12px; }
 
-  /* ---------- PROJECT ROWS ---------- */
-  .project{ padding: 40px 0; border-top: 1px solid var(--grid-line); }
-  .project:first-child{ border-top: none; padding-top: 0; }
-  .project-top{ display:flex; justify-content:space-between; align-items:flex-start; gap: 24px; flex-wrap: wrap; margin-bottom: 22px; }
-  .project-title{ font-size: 1.35rem; }
-  .project-title .who{ display:block; font-family:'IBM Plex Sans',sans-serif; font-weight: 400; font-size: 0.85rem; color: var(--text-faint); margin-top: 4px; }
-  .project-status{ font-family:'IBM Plex Mono',monospace; font-size: 0.75rem; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-dim); white-space: nowrap; height: fit-content; }
-  .project-status.live{ color: #8FE0A8; border-color: #2E5C3F; }
-  .project-desc{ color: var(--text-dim); max-width: 62ch; margin-bottom: 26px; }
+  /* ---------- SOLUTIONS ---------- */
+  .solutions-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  .solution-card{ background:var(--bg-panel); padding:28px; }
+  .solution-card .idx{ font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--accent); }
+  .solution-card h3{ font-size:1.1rem; margin-top:10px; }
+  .solution-card p{ color:var(--text-dim); font-size:0.92rem; margin-top:8px; }
+  @media (max-width:700px){ .solutions-grid{ grid-template-columns:1fr; } }
 
-  .pipeline{ display:flex; align-items:center; flex-wrap: wrap; gap: 0; padding: 22px 20px; background: var(--bg-panel-2); border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; }
-  .pnode{ font-family:'IBM Plex Mono',monospace; font-size: 0.8rem; padding: 9px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-panel); color: var(--text); white-space: nowrap; }
-  .parrow{ color: var(--text-faint); padding: 0 12px; font-size: 0.9rem; }
+  /* ---------- PROJECTS ---------- */
+  .projects-grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media (max-width:820px){ .projects-grid{ grid-template-columns:1fr; } }
+  .project-card{ background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); padding:26px; display:flex; flex-direction:column; }
+  .project-card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  .project-card h3{ font-size:1.1rem; }
+  .project-card .who{ font-size:0.8rem; color:var(--text-faint); margin-top:4px; }
+  .project-status{ font-family:'IBM Plex Mono',monospace; font-size:0.72rem; padding:3px 9px; border-radius:999px; border:1px solid var(--line); color:var(--text-dim); white-space:nowrap; }
+  .project-status.live{ color:#8FE0A8; border-color:#2E5C3F; }
+  .project-card p.desc{ color:var(--text-dim); font-size:0.9rem; margin-top:14px; flex-grow:1; }
+  .mini-pipeline{ display:flex; flex-wrap:wrap; gap:6px; margin-top:16px; }
+  .mini-node{ font-family:'IBM Plex Mono',monospace; font-size:0.7rem; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:3px; padding:4px 8px; }
+  .mini-features{ margin-top:16px; display:flex; flex-direction:column; gap:6px; }
+  .mini-feature{ font-size:0.82rem; color:var(--text-dim); }
+  .mini-feature b{ color:var(--text); font-family:'IBM Plex Mono',monospace; font-weight:500; }
+  .tags{ display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+  .tag{ font-size:0.72rem; color:var(--text-faint); font-family:'IBM Plex Mono',monospace; }
+  .tag:not(:last-child)::after{ content:'/'; margin-left:8px; color:var(--line); }
+  .project-links{ margin-top:14px; }
+  .project-links a{ font-size:0.85rem; text-decoration:none; color:var(--text-dim); border-bottom:1px solid var(--line); }
+  .project-links a:hover{ color:var(--accent); border-color:var(--accent); }
 
-  .tags{ display:flex; gap:8px; flex-wrap:wrap; margin-top: 20px; }
-  .tag{ font-size: 0.75rem; color: var(--text-faint); font-family:'IBM Plex Mono',monospace; }
-  .tag:not(:last-child)::after{ content:'/'; margin-left: 8px; color: var(--line); }
-
-  .project-links{ margin-top: 18px; }
-  .project-links a{ font-size: 0.88rem; text-decoration: none; color: var(--text-dim); border-bottom: 1px solid var(--line); }
-  .project-links a:hover{ color: var(--accent); border-color: var(--accent); }
-
-  .feature-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
-  .feature{ background: var(--bg-panel-2); padding: 18px 20px; }
-  .feature .num{ font-family:'IBM Plex Mono',monospace; color: var(--accent); font-size: 0.78rem; }
-  .feature p{ margin: 8px 0 0; font-size: 0.88rem; color: var(--text-dim); }
-  @media (max-width: 640px){ .feature-grid{ grid-template-columns: 1fr; } }
-
-  /* ---------- STACK ---------- */
-  .stack-list{ display:flex; flex-wrap:wrap; gap: 14px 28px; }
-  .stack-item{ display:flex; align-items:center; gap:10px; font-family:'IBM Plex Mono',monospace; font-size: 0.92rem; color: var(--text); }
-  .stack-item .tick{ width:6px;height:6px; background: var(--trace); border-radius:1px; }
+  /* ---------- ABOUT ---------- */
+  .about-grid{ display:grid; grid-template-columns:0.8fr 1.2fr; gap:56px; align-items:center; }
+  @media (max-width:820px){ .about-grid{ grid-template-columns:1fr; } }
+  .about-photo{ position:relative; width:100%; max-width:280px; aspect-ratio:1/1; border-radius:50%; overflow:hidden; border:1px solid var(--line); background:var(--bg-panel); }
+  .about-photo img{ width:100%; height:100%; object-fit:cover; }
+  .about-photo .photo-placeholder{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+  .about-text p{ color:var(--text-dim); margin-top:14px; max-width:56ch; }
+  .stats-row{ display:flex; gap:36px; margin-top:28px; flex-wrap:wrap; }
+  .stat .value{ font-family:'Space Grotesk',sans-serif; font-size:1.8rem; font-weight:600; color:var(--accent); }
+  .stat .label{ font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text-faint); margin-top:2px; }
 
   /* ---------- CONTACT ---------- */
-  .contact-box{ display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 24px; padding: 40px; background: var(--bg-panel); border: 1px solid var(--line); border-radius: var(--radius); }
-  .contact-box h2{ font-size: 1.5rem; max-width: 20ch; }
-  .contact-links{ display:flex; gap: 20px; flex-wrap: wrap; }
+  .contact-box{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:24px; padding:44px; background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); }
+  .contact-box h2{ font-size:1.5rem; max-width:20ch; }
+  .contact-links{ display:flex; gap:20px; flex-wrap:wrap; }
 
-  footer{ padding: 32px 0 48px; color: var(--text-faint); font-size: 0.82rem; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+  footer{ padding:32px 0 48px; color:var(--text-faint); font-size:0.82rem; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; border-top:1px solid var(--line); }
 
-  /* ---------- LOADING / ERROR STATES ---------- */
-  .load-note{ color: var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size: 0.85rem; padding: 20px 0; }
-  .error-note{ color: var(--accent); font-family:'IBM Plex Mono',monospace; font-size: 0.85rem; padding: 20px 0; max-width: 60ch; }
+  .load-note{ color:var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size:0.85rem; padding:20px 0; }
+  .error-note{ color:var(--accent); font-family:'IBM Plex Mono',monospace; font-size:0.85rem; padding:20px 0; max-width:60ch; }
 </style>
 </head>
 <body>
@@ -157,7 +168,8 @@
     <div class="navlinks">
       <a href="#projects">Projects</a>
       <a href="#stack">Stack</a>
-      <a href="#contact">Contact</a>
+      <a href="#about">About</a>
+      <a class="btn btn-ghost" href="#contact">Contact</a>
     </div>
   </nav>
 </header>
@@ -165,55 +177,75 @@
 <section class="hero">
   <div class="wrap hero-grid">
     <div>
-      <h1 id="hero-title">Loading…</h1>
+      <span class="eyebrow"><span class="dot"></span>Welcome</span>
+      <h1>I'm <span id="hero-name">…</span><br><span class="role" id="hero-role"></span></h1>
+      <div class="hero-location mono" id="hero-location"></div>
       <p class="sub" id="hero-sub"></p>
       <div class="hero-cta">
-        <a class="btn btn-primary" href="#projects" id="cta-primary">See the projects</a>
+        <a class="btn btn-primary" href="#projects" id="cta-primary">See my work</a>
         <a class="btn btn-ghost" href="#contact" id="cta-secondary">Get in touch</a>
       </div>
     </div>
-    <div>
-      <svg class="hero-diagram" viewBox="0 0 460 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of a webhook connecting to an AI agent, which connects to a CRM and an alert">
-        <path class="trace-line d1" d="M70,60 H180" />
-        <path class="trace-line d2" d="M280,60 H370" />
-        <path class="trace-line d3" d="M370,60 V150 H180" />
-        <path class="trace-line d2" d="M70,150 H130" />
-        <rect class="node-rect" x="10" y="40" width="120" height="40" rx="3"/>
-        <circle class="node-dot" cx="24" cy="60" r="3"/>
-        <text class="node-label" x="36" y="64">webhook.in</text>
-        <rect class="node-rect" x="180" y="40" width="140" height="40" rx="3"/>
-        <circle class="node-dot" cx="194" cy="60" r="3"/>
-        <text class="node-label" x="206" y="64">ai_agent.run()</text>
-        <rect class="node-rect" x="370" y="40" width="80" height="40" rx="3"/>
-        <circle class="node-dot" cx="384" cy="60" r="3"/>
-        <text class="node-label" x="396" y="64">slack</text>
-        <rect class="node-rect" x="10" y="130" width="120" height="40" rx="3"/>
-        <circle class="node-dot" cx="24" cy="150" r="3"/>
-        <text class="node-label" x="36" y="154">ghl.crm</text>
-        <rect class="node-rect" x="180" y="130" width="100" height="40" rx="3"/>
-        <circle class="node-dot" cx="194" cy="150" r="3"/>
-        <text class="node-label" x="206" y="154">calendar</text>
+    <div class="photo-stage">
+      <svg class="ring-svg" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="49" class="dash"/>
+        <circle cx="50" cy="50" r="44"/>
       </svg>
+      <div class="photo-wrap" id="hero-photo-wrap">
+        <span class="photo-placeholder" id="hero-photo-placeholder">…</span>
+      </div>
+      <div id="hero-badges"></div>
     </div>
+  </div>
+</section>
+
+<div class="marquee-band">
+  <div class="marquee-track" id="marquee-track"></div>
+</div>
+
+<section class="section" id="solutions">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>What I build</span>
+      <h2>Systems, not just scripts</h2>
+      <p>The kinds of automations I keep coming back to.</p>
+    </div>
+    <div class="solutions-grid" id="solutions-container"><p class="load-note">Loading…</p></div>
   </div>
 </section>
 
 <section class="section" id="projects">
   <div class="wrap">
     <div class="section-head">
-      <h2>Projects</h2>
-      <span class="count mono" id="project-count"></span>
+      <span class="eyebrow"><span class="dot"></span>Portfolio</span>
+      <h2>Recent projects</h2>
     </div>
-    <div id="projects-container">
-      <p class="load-note">Loading projects…</p>
-    </div>
+    <div class="projects-grid" id="projects-container"><p class="load-note">Loading projects…</p></div>
   </div>
 </section>
 
 <section class="section" id="stack">
   <div class="wrap">
-    <div class="section-head"><h2>Tools I work in</h2></div>
-    <div class="stack-list" id="stack-container"></div>
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Toolbox</span>
+      <h2>Tools I work in</h2>
+    </div>
+    <div class="tags" id="stack-container" style="font-size:0.95rem;"></div>
+  </div>
+</section>
+
+<section class="section" id="about">
+  <div class="wrap about-grid">
+    <div class="about-photo">
+      <img id="about-photo-img" style="display:none;">
+      <div class="photo-placeholder" id="about-photo-placeholder">…</div>
+    </div>
+    <div class="about-text">
+      <span class="eyebrow"><span class="dot"></span>About</span>
+      <h2 id="about-heading">Who's behind this?</h2>
+      <p id="about-bio"></p>
+      <div class="stats-row" id="stats-container"></div>
+    </div>
   </div>
 </section>
 
@@ -238,50 +270,52 @@
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
   // ---- EDIT THESE TWO LINES with your Supabase project's values ----
-  // Supabase → Settings → API → Project URL / anon public key
   const SUPABASE_URL = 'https://vqthioychxlqknfwboqk.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_pD_0O9o-4s6hzKh4wUFuRg_y6MoUoF8';
   // --------------------------------------------------------------------
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  function esc(str){
-    const d = document.createElement('div');
-    d.textContent = str ?? '';
-    return d.innerHTML;
+  function esc(str){ const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
+  function initials(name){
+    if (!name) return '?';
+    return name.trim().split(/\s+/).slice(0,2).map(w => w[0]?.toUpperCase() || '').join('');
   }
 
-  function renderPipeline(nodes){
-    const parts = nodes.map(n => `<span class="pnode">${esc(n)}</span>`);
-    return `<div class="pipeline">${parts.join('<span class="parrow">→</span>')}</div>`;
+  function renderSolutions(list){
+    return (list||[]).map((s,i) => `
+      <div class="solution-card">
+        <div class="idx mono">${String(i+1).padStart(2,'0')}</div>
+        <h3>${esc(s.title)}</h3>
+        <p>${esc(s.description)}</p>
+      </div>`).join('') || '<p class="load-note">No solutions added yet.</p>';
   }
 
-  function renderFeatures(features){
-    const cells = features.map(f => `
-      <div class="feature">
-        <span class="num mono">${esc(f.label)}</span>
-        <p>${esc(f.desc)}</p>
-      </div>`).join('');
-    return `<div class="feature-grid">${cells}</div>`;
+  function renderProjectBody(p){
+    if (p.layout === 'features' && Array.isArray(p.features)){
+      return `<div class="mini-features">${p.features.map(f => `<div class="mini-feature"><b>${esc(f.label)}</b> — ${esc(f.desc)}</div>`).join('')}</div>`;
+    }
+    const nodes = Array.isArray(p.nodes) ? p.nodes : [];
+    return `<div class="mini-pipeline">${nodes.map(n => `<span class="mini-node">${esc(n)}</span>`).join('')}</div>`;
   }
 
   function renderProject(p){
     const statusClass = p.status === 'live' ? 'project-status live' : 'project-status';
-    const body = p.layout === 'features'
-      ? renderFeatures(p.features || [])
-      : renderPipeline(p.nodes || []);
-    const tags = (p.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+    const tags = (p.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join('');
     const link = p.link_url
       ? `<div class="project-links"><a href="${esc(p.link_url)}" target="_blank" rel="noopener">${esc(p.link_url.replace(/^https?:\/\//,''))}</a></div>`
       : '';
     return `
-      <div class="project">
-        <div class="project-top">
-          <div class="project-title">${esc(p.title)}${p.who ? `<span class="who">${esc(p.who)}</span>` : ''}</div>
+      <div class="project-card">
+        <div class="project-card-top">
+          <div>
+            <h3>${esc(p.title)}</h3>
+            ${p.who ? `<div class="who">${esc(p.who)}</div>` : ''}
+          </div>
           <span class="${statusClass}">${esc(p.status)}</span>
         </div>
-        <p class="project-desc">${esc(p.description)}</p>
-        ${body}
+        <p class="desc">${esc(p.description)}</p>
+        ${renderProjectBody(p)}
         <div class="tags">${tags}</div>
         ${link}
       </div>`;
@@ -289,40 +323,72 @@
 
   async function loadSite(){
     try{
-      const [{ data: content, error: e1 }, { data: stack, error: e2 }, { data: projects, error: e3 }] = await Promise.all([
+      const [{ data: content }, { data: badges }, { data: solutions }, { data: projects }, { data: stack }, { data: stats }] = await Promise.all([
         supabase.from('site_content').select('key,value'),
+        supabase.from('hero_badges').select('label').order('sort_order'),
+        supabase.from('solutions').select('*').order('sort_order'),
+        supabase.from('projects').select('*').order('sort_order'),
         supabase.from('stack_items').select('label').order('sort_order'),
-        supabase.from('projects').select('*').order('sort_order')
+        supabase.from('about_stats').select('*').order('sort_order')
       ]);
-      if (e1 || e2 || e3) throw (e1 || e2 || e3);
 
       const c = Object.fromEntries((content || []).map(r => [r.key, r.value]));
 
       document.getElementById('nav-brand').textContent = c.brand_name || 'Portfolio';
-      document.getElementById('hero-title').textContent = c.hero_title || '';
+      document.title = (c.brand_name ? c.brand_name + ' — ' : '') + 'Automation Portfolio';
+      document.getElementById('hero-name').textContent = c.hero_name || '';
+      document.getElementById('hero-role').textContent = c.hero_role || '';
+      document.getElementById('hero-location').textContent = c.hero_location || '';
       document.getElementById('hero-sub').textContent = c.hero_sub || '';
-      document.getElementById('cta-primary').textContent = c.cta_primary_label || 'See the projects';
+      document.getElementById('cta-primary').textContent = c.cta_primary_label || 'See my work';
       document.getElementById('cta-secondary').textContent = c.cta_secondary_label || 'Get in touch';
+      document.getElementById('about-heading').textContent = c.about_heading || "Who's behind this?";
+      document.getElementById('about-bio').textContent = c.about_bio || '';
       document.getElementById('contact-heading').textContent = c.contact_heading || '';
       document.getElementById('contact-email').textContent = c.contact_email || '';
       document.getElementById('contact-email').href = 'mailto:' + (c.contact_email || '');
       document.getElementById('contact-linkedin').href = c.contact_linkedin_url || '#';
       document.getElementById('footer-name').textContent = c.footer_name ? `Built by ${c.footer_name}.` : '';
       document.getElementById('footer-location').textContent = c.footer_location || '';
-      document.title = (c.brand_name ? c.brand_name + ' — ' : '') + 'Automation Portfolio';
 
-      document.getElementById('stack-container').innerHTML = (stack || [])
-        .map(s => `<div class="stack-item"><span class="tick"></span>${esc(s.label)}</div>`).join('');
+      // Hero + about photo (same source image)
+      const initialsText = initials(c.hero_name);
+      if (c.hero_photo_url){
+        document.getElementById('hero-photo-wrap').innerHTML = `<img src="${esc(c.hero_photo_url)}" alt="${esc(c.hero_name || 'Profile photo')}">`;
+        document.getElementById('about-photo-img').src = c.hero_photo_url;
+        document.getElementById('about-photo-img').style.display = 'block';
+        document.getElementById('about-photo-placeholder').style.display = 'none';
+      } else {
+        document.getElementById('hero-photo-placeholder').textContent = initialsText;
+        document.getElementById('about-photo-placeholder').textContent = initialsText;
+      }
 
-      const projectsHTML = (projects || []).map(renderProject).join('');
-      document.getElementById('projects-container').innerHTML = projectsHTML || '<p class="load-note">No projects yet — add rows in Supabase → projects.</p>';
-      document.getElementById('project-count').textContent =
-        String(projects?.length ?? 0).padStart(2, '0') + ' systems';
+      // Hero badges positioned around the photo
+      const badgeClasses = ['b1','b2','b3'];
+      document.getElementById('hero-badges').innerHTML = (badges||[]).slice(0,3).map((b,i) => `
+        <div class="badge-chip ${badgeClasses[i] || ''}"><span class="dot"></span>${esc(b.label)}</div>
+      `).join('');
+
+      // Marquee (duplicated once for seamless loop)
+      const stackLabels = (stack||[]).map(s => s.label);
+      const marqueeItems = (list) => list.map(l => `<span class="marquee-item">${esc(l)}<span class="sep">/</span></span>`).join('');
+      document.getElementById('marquee-track').innerHTML = marqueeItems(stackLabels) + marqueeItems(stackLabels);
+
+      // Stack tags (in Stack section)
+      document.getElementById('stack-container').innerHTML = (stack||[])
+        .map(s => `<span class="tag" style="font-size:0.95rem;">${esc(s.label)}</span>`).join('');
+
+      document.getElementById('solutions-container').innerHTML = renderSolutions(solutions);
+      document.getElementById('projects-container').innerHTML = (projects||[]).map(renderProject).join('') || '<p class="load-note">No projects yet.</p>';
+
+      document.getElementById('stats-container').innerHTML = (stats||[]).map(s => `
+        <div class="stat"><div class="value">${esc(s.value)}</div><div class="label mono">${esc(s.label)}</div></div>
+      `).join('');
 
     } catch(err){
       console.error('Failed to load site content from Supabase:', err);
       document.getElementById('projects-container').innerHTML =
-        `<p class="error-note">Couldn't load content from Supabase. Check that SUPABASE_URL and SUPABASE_ANON_KEY are set correctly in index.html, and that the schema.sql has been run.</p>`;
+        `<p class="error-note">Couldn't load content from Supabase. Check that SUPABASE_URL and SUPABASE_ANON_KEY are correct, and that schema.sql has been run.</p>`;
     }
   }
 
