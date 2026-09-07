@@ -648,11 +648,14 @@
     }
   });
 
-  // ---------- CHAT WIDGET (UI only — not connected to a real assistant yet) ----------
+  // ---------- CHAT WIDGET (real-time streaming via Supabase Edge Function) ----------
+  const CHAT_ENDPOINT = 'https://vqthioychxlqknfwboqk.supabase.co/functions/v1/portfolio-chat';
   const chatPanel = document.getElementById('chat-panel');
   const chatMessages = document.getElementById('chat-messages');
   const chatInput = document.getElementById('chat-input');
+  const chatSendBtn = document.getElementById('chat-send');
   let chatOpened = false;
+  let chatHistory = []; // resets on page reload — lives only in this tab
 
   function addBubble(text, who){
     const b = document.createElement('div');
@@ -660,25 +663,79 @@
     b.textContent = text;
     chatMessages.appendChild(b);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+    return b;
   }
 
   document.getElementById('chat-fab').addEventListener('click', () => {
     chatPanel.classList.toggle('open');
     if (!chatOpened && chatPanel.classList.contains('open')){
       chatOpened = true;
-      addBubble("Hey! This chat isn't wired up to a real assistant yet — I'm still building her. Feel free to leave a message and I'll read it, or email me directly below.", 'bot');
+      addBubble("Hi! Ask me anything about the work here, or tell me if you'd like to book a call.", 'bot');
     }
   });
   document.getElementById('chat-close').addEventListener('click', () => chatPanel.classList.remove('open'));
 
-  function sendChat(){
+  async function sendChat(){
     const text = chatInput.value.trim();
     if (!text) return;
     addBubble(text, 'user');
     chatInput.value = '';
-    setTimeout(() => addBubble("Thanks — noted! For a real reply right now, use the booking form or email above.", 'bot'), 500);
+    chatSendBtn.disabled = true;
+
+    const botBubble = addBubble('', 'bot');
+    let fullReply = '';
+
+    try {
+      const res = await fetch(CHAT_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, history: chatHistory })
+      });
+
+      if (!res.ok || !res.body){
+        botBubble.textContent = "Sorry, I couldn't reach the assistant. Try the booking form or email instead.";
+        chatSendBtn.disabled = false;
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true){
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        for (const line of lines){
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data:')) continue;
+          const payload = trimmed.slice(5).trim();
+          if (payload === '[DONE]') continue;
+          try {
+            const json = JSON.parse(payload);
+            if (json.token){
+              fullReply += json.token;
+              botBubble.textContent = fullReply;
+              chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+          } catch(e){ /* ignore malformed chunk */ }
+        }
+      }
+
+      if (fullReply){
+        chatHistory.push({ role: 'user', content: text });
+        chatHistory.push({ role: 'assistant', content: fullReply });
+      } else {
+        botBubble.textContent = "Sorry, something went wrong. Try the booking form or email instead.";
+      }
+    } catch(err){
+      botBubble.textContent = "Sorry, I couldn't reach the assistant. Try the booking form or email instead.";
+    }
+    chatSendBtn.disabled = false;
   }
-  document.getElementById('chat-send').addEventListener('click', sendChat);
+  chatSendBtn.addEventListener('click', sendChat);
   chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
 </script>
 
