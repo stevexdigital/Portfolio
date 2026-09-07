@@ -145,7 +145,7 @@
       <button data-panel="panel-projects">Projects</button>
       <button data-panel="panel-stack">Stack</button>
       <button data-panel="panel-stats">About stats</button>
-      <button data-panel="panel-photo">Hero photo</button>
+      <button data-panel="panel-photo">Photos</button>
     </nav>
     <button id="logout-btn">Log out</button>
   </aside>
@@ -235,6 +235,15 @@
         <span class="save-note" id="photo-note"></span>
       </div>
       <img id="photo-preview" class="preview" style="display:none;">
+
+      <h2 style="margin-top:36px;">Favicon</h2>
+      <p class="hint">The small icon shown in the browser tab. Square images work best (e.g. 512×512px).</p>
+      <input type="file" id="favicon-input" accept="image/*">
+      <div class="row" style="margin-top:12px;">
+        <button class="primary" id="upload-favicon-btn">Upload & use as favicon</button>
+        <span class="save-note" id="favicon-note"></span>
+      </div>
+      <img id="favicon-preview" class="preview" style="display:none; max-width:64px;">
     </section>
   </main>
 </div>
@@ -608,15 +617,41 @@
     }
   });
 
+  // ---------- FAVICON ----------
+  document.getElementById('upload-favicon-btn').addEventListener('click', async () => {
+    const fileInput = document.getElementById('favicon-input');
+    const note = document.getElementById('favicon-note');
+    if (!fileInput.files[0]){ note.textContent = 'Choose a file first.'; return; }
+    const file = fileInput.files[0];
+    const path = 'favicon.' + file.name.split('.').pop();
+    note.textContent = 'Uploading…';
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+    if (uploadError){ note.textContent = 'Error: ' + uploadError.message; return; }
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+    const publicUrl = urlData.publicUrl + '?t=' + Date.now();
+    const { error: saveError } = await supabase.from('site_content').upsert({ key: 'favicon_url', value: publicUrl }, { onConflict: 'key' });
+    note.textContent = saveError ? 'Error: ' + saveError.message : 'Uploaded and set as your favicon.';
+    if (!saveError){
+      document.getElementById('favicon-preview').src = publicUrl;
+      document.getElementById('favicon-preview').style.display = 'block';
+      toast('Favicon updated');
+    }
+  });
+
   // ---------- LOAD EVERYTHING ----------
   async function loadAll(){
     await Promise.all([
       loadSiteContent(), heroBadges.load(), loadSolutions(), loadProjects(), stackItems.load(), loadStats()
     ]);
-    const { data } = await supabase.from('site_content').select('value').eq('key','hero_photo_url').maybeSingle();
-    if (data?.value){
-      document.getElementById('photo-preview').src = data.value;
+    const { data: heroData } = await supabase.from('site_content').select('value').eq('key','hero_photo_url').maybeSingle();
+    if (heroData?.value){
+      document.getElementById('photo-preview').src = heroData.value;
       document.getElementById('photo-preview').style.display = 'block';
+    }
+    const { data: favData } = await supabase.from('site_content').select('value').eq('key','favicon_url').maybeSingle();
+    if (favData?.value){
+      document.getElementById('favicon-preview').src = favData.value;
+      document.getElementById('favicon-preview').style.display = 'block';
     }
   }
 

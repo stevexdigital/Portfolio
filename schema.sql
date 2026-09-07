@@ -90,6 +90,7 @@ insert into public.site_content (key, value) values
   ('hero_location', 'Based in Davao, Philippines'),
   ('hero_sub', 'I build AI agents and automations that answer questions, sort leads, and keep the pipeline moving.'),
   ('hero_photo_url', ''),
+  ('favicon_url', ''),
   ('about_heading', 'Who''s behind this?'),
   ('about_bio', 'I''m a self-taught automation builder learning by shipping — wiring together AI agents, CRMs, and workflow tools into systems that actually run without me.'),
   ('cta_primary_label', 'See my work'),
