@@ -117,6 +117,7 @@ insert into public.site_content (key, value) values
   ('hero_sub', 'I build AI agents and automations that answer questions, sort leads, and keep the pipeline moving.'),
   ('hero_photo_url', ''),
   ('favicon_url', ''),
+  ('header_logo_url', ''),
   ('booking_calendar_url', ''),
   ('whatsapp_number', ''),
   ('about_heading', 'Who''s behind this?'),

@@ -254,7 +254,17 @@
     </section>
 
     <section class="panel" id="panel-photo">
-      <h2>Hero photo</h2>
+      <h2>Header logo</h2>
+      <p class="hint">Shown in the top-left of the nav bar, replacing the text brand name. Wide/rectangular logos work well here — leave unset to keep using the text name.</p>
+      <input type="file" id="logo-input" accept="image/*">
+      <div class="row" style="margin-top:12px;">
+        <button class="primary" id="upload-logo-btn">Upload & use as header logo</button>
+        <button class="danger" id="remove-logo-btn">Remove logo</button>
+        <span class="save-note" id="logo-note"></span>
+      </div>
+      <img id="logo-preview" class="preview" style="display:none; max-height:48px; max-width:200px;">
+
+      <h2 style="margin-top:36px;">Hero photo</h2>
       <p class="hint">Uploads to your Supabase storage bucket and updates the site automatically.</p>
       <input type="file" id="photo-input" accept="image/*">
       <div class="row" style="margin-top:12px;">
@@ -674,6 +684,36 @@
     } else toast('Error: ' + error.message);
   });
 
+  // ---------- HEADER LOGO ----------
+  document.getElementById('upload-logo-btn').addEventListener('click', async () => {
+    const fileInput = document.getElementById('logo-input');
+    const note = document.getElementById('logo-note');
+    if (!fileInput.files[0]){ note.textContent = 'Choose a file first.'; return; }
+    const file = fileInput.files[0];
+    const path = 'header-logo.' + file.name.split('.').pop();
+    note.textContent = 'Uploading…';
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+    if (uploadError){ note.textContent = 'Error: ' + uploadError.message; return; }
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+    const publicUrl = urlData.publicUrl + '?t=' + Date.now();
+    const { error: saveError } = await supabase.from('site_content').upsert({ key: 'header_logo_url', value: publicUrl }, { onConflict: 'key' });
+    note.textContent = saveError ? 'Error: ' + saveError.message : 'Uploaded and set as your header logo.';
+    if (!saveError){
+      document.getElementById('logo-preview').src = publicUrl;
+      document.getElementById('logo-preview').style.display = 'block';
+      toast('Logo updated');
+    }
+  });
+  document.getElementById('remove-logo-btn').addEventListener('click', async () => {
+    const note = document.getElementById('logo-note');
+    const { error } = await supabase.from('site_content').upsert({ key: 'header_logo_url', value: '' }, { onConflict: 'key' });
+    note.textContent = error ? 'Error: ' + error.message : 'Removed — back to text brand name.';
+    if (!error){
+      document.getElementById('logo-preview').style.display = 'none';
+      toast('Logo removed');
+    }
+  });
+
   // ---------- HERO PHOTO ----------
   document.getElementById('upload-photo-btn').addEventListener('click', async () => {
     const fileInput = document.getElementById('photo-input');
@@ -759,6 +799,11 @@
     if (favData?.value){
       document.getElementById('favicon-preview').src = favData.value;
       document.getElementById('favicon-preview').style.display = 'block';
+    }
+    const { data: logoData } = await supabase.from('site_content').select('value').eq('key','header_logo_url').maybeSingle();
+    if (logoData?.value){
+      document.getElementById('logo-preview').src = logoData.value;
+      document.getElementById('logo-preview').style.display = 'block';
     }
   }
 

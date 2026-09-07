@@ -61,6 +61,7 @@
   nav.wrap{ display:flex; align-items:center; justify-content:space-between; height:64px; }
   .brand{ font-weight:700; font-size:1.1rem; display:flex; align-items:center; gap:8px; }
   .brand .dot{ width:8px;height:8px;border-radius:50%; background:var(--accent); box-shadow:0 0 8px var(--accent); }
+  .brand img{ max-height:32px; max-width:160px; display:block; }
   .navlinks{ display:flex; align-items:center; gap:24px; font-size:0.92rem; }
   .navlinks a{ text-decoration:none; color:var(--text-dim); transition:color .15s; }
   .navlinks a:hover{ color:var(--text); }
@@ -246,7 +247,7 @@
 
 <header>
   <nav class="wrap">
-    <div class="brand"><span class="dot"></span><span id="nav-brand">Loading…</span></div>
+    <div class="brand" id="nav-brand-wrap"><span class="dot" id="nav-brand-dot"></span><span id="nav-brand">Loading…</span></div>
     <div class="navlinks">
       <a href="#projects">Projects</a>
       <a href="#about">About</a>
@@ -543,6 +544,9 @@
       const c = Object.fromEntries((content || []).map(r => [r.key, r.value]));
 
       document.getElementById('nav-brand').textContent = c.brand_name || 'Portfolio';
+      if (c.header_logo_url){
+        document.getElementById('nav-brand-wrap').innerHTML = `<img src="${esc(c.header_logo_url)}" alt="${esc(c.brand_name || 'Logo')}">`;
+      }
       setFavicon(c.brand_name || 'Portfolio', c.favicon_url);
       document.title = (c.brand_name ? c.brand_name + ' — ' : '') + 'Automation Portfolio';
       document.getElementById('hero-name').textContent = c.hero_name || '';
