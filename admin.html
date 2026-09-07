@@ -337,6 +337,7 @@
     ['about_heading','About: heading'],['about_bio','About: bio', true],
     ['cta_primary_label','Primary button label'],['cta_secondary_label','Secondary button label'],
     ['contact_heading','Contact heading'],['contact_email','Contact email'],['contact_linkedin_url','LinkedIn URL'],
+    ['booking_calendar_url','Google Calendar booking link (leave blank to use the plain form)'],
     ['footer_name','Footer name'],['footer_location','Footer location']
   ];
 
@@ -401,7 +402,6 @@
   }
 
   const heroBadges = simpleList('hero_badges', 'hero-badges-list', 'label', 'No badges yet.');
-  const stackItems = simpleList('stack_items', 'stack-list', 'label', 'No tools yet.');
 
   document.getElementById('add-badge-btn').addEventListener('click', async () => {
     const label = document.getElementById('new-badge-label').value.trim();
@@ -411,11 +411,66 @@
     else toast('Error: ' + error.message);
   });
 
+  // ---------- STACK ITEMS (with per-item logo upload) ----------
+  async function loadStackItems(){
+    const { data } = await supabase.from('stack_items').select('*').order('sort_order');
+    const container = document.getElementById('stack-list');
+    container.innerHTML = (data||[]).map(row => `
+      <div class="card" data-id="${row.id}">
+        <div class="row">
+          <input style="flex:1" data-field="label" value="${esc(row.label)}">
+          <input type="number" style="width:70px" data-field="sort_order" value="${row.sort_order}" title="order">
+          <button data-save>Save</button>
+          <button class="danger" data-delete>Delete</button>
+        </div>
+        <div class="row" style="margin-top:12px; align-items:center;">
+          ${row.logo_url ? `<img src="${esc(row.logo_url)}" style="width:36px;height:36px;object-fit:contain;border-radius:6px;border:1px solid var(--line);">` : `<span class="hint" style="margin:0;">No logo uploaded — showing auto icon/monogram</span>`}
+          <input type="file" accept="image/*" data-logo-input style="flex:1;">
+          <button data-upload-logo>Upload logo</button>
+        </div>
+        <div class="save-note" data-logo-note></div>
+      </div>
+    `).join('') || `<p class="hint">No tools yet.</p>`;
+
+    container.querySelectorAll('[data-save]').forEach(btn => btn.addEventListener('click', async (e) => {
+      const card = e.target.closest('.card');
+      const payload = {
+        label: card.querySelector('[data-field="label"]').value,
+        sort_order: Number(card.querySelector('[data-field="sort_order"]').value)
+      };
+      const { error } = await supabase.from('stack_items').update(payload).eq('id', card.dataset.id);
+      toast(error ? 'Error: ' + error.message : 'Saved');
+    }));
+    container.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async (e) => {
+      const card = e.target.closest('.card');
+      if (!confirm('Delete this item?')) return;
+      const { error } = await supabase.from('stack_items').delete().eq('id', card.dataset.id);
+      if (!error){ card.remove(); toast('Deleted'); } else toast('Error: ' + error.message);
+    }));
+    container.querySelectorAll('[data-upload-logo]').forEach(btn => btn.addEventListener('click', async (e) => {
+      const card = e.target.closest('.card');
+      const id = card.dataset.id;
+      const fileInput = card.querySelector('[data-logo-input]');
+      const note = card.querySelector('[data-logo-note]');
+      if (!fileInput.files[0]){ note.textContent = 'Choose a file first.'; return; }
+      const file = fileInput.files[0];
+      const path = `stack-logos/${id}.` + file.name.split('.').pop();
+      note.textContent = 'Uploading…';
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+      if (uploadError){ note.textContent = 'Error: ' + uploadError.message; return; }
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+      const publicUrl = urlData.publicUrl + '?t=' + Date.now();
+      const { error: saveError } = await supabase.from('stack_items').update({ logo_url: publicUrl }).eq('id', id);
+      note.textContent = saveError ? 'Error: ' + saveError.message : 'Logo updated.';
+      if (!saveError){ toast('Logo updated'); loadStackItems(); }
+    }));
+  }
+
   document.getElementById('add-stack-btn').addEventListener('click', async () => {
     const label = document.getElementById('new-stack-label').value.trim();
     if (!label) return;
     const { error } = await supabase.from('stack_items').insert({ label, sort_order: 99 });
-    if (!error){ document.getElementById('new-stack-label').value=''; stackItems.load(); toast('Added'); }
+    if (!error){ document.getElementById('new-stack-label').value=''; loadStackItems(); toast('Added'); }
     else toast('Error: ' + error.message);
   });
 
@@ -677,7 +732,7 @@
 
   async function loadAll(){
     await Promise.all([
-      loadSiteContent(), heroBadges.load(), loadSolutions(), loadProjects(), stackItems.load(), loadStats(), loadBookings()
+      loadSiteContent(), heroBadges.load(), loadSolutions(), loadProjects(), loadStackItems(), loadStats(), loadBookings()
     ]);
     const { data: heroData } = await supabase.from('site_content').select('value').eq('key','hero_photo_url').maybeSingle();
     if (heroData?.value){

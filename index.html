@@ -196,6 +196,7 @@
 
   /* ---------- BOOKING ---------- */
   .booking-box{ background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); padding:36px; max-width:640px; }
+  #booking-calendar-embed iframe{ width:100%; height:600px; border:1px solid var(--line); border-radius:var(--radius); }
   .booking-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   @media (max-width:560px){ .booking-row{ grid-template-columns:1fr; } }
   .field{ margin-top:16px; }
@@ -355,8 +356,9 @@
     <div class="section-head">
       <span class="eyebrow"><span class="dot"></span>Let's talk</span>
       <h2>Book a call</h2>
-      <p>Tell me a bit about what you need and a good time to reach you — I'll follow up by email.</p>
+      <p id="booking-sub">Tell me a bit about what you need and a good time to reach you — I'll follow up by email.</p>
     </div>
+    <div id="booking-calendar-embed" style="display:none;"></div>
     <form class="booking-box" id="booking-form">
       <div class="booking-row">
         <div class="field">
@@ -495,7 +497,12 @@
     if (trimmed.includes(' ')) return initials(trimmed);
     return trimmed.slice(0,2);
   }
-  function logoMark(label, sizePx){
+  function logoMark(label, sizePx, uploadedLogoUrl){
+    if (uploadedLogoUrl){
+      return `<span class="logo-mark" style="width:${sizePx}px;height:${sizePx}px;background:var(--bg-panel-2); overflow:hidden;">
+        <img src="${esc(uploadedLogoUrl)}" alt="${esc(label)}" style="width:100%;height:100%;object-fit:contain;">
+      </span>`;
+    }
     const slug = BRAND_SLUGS[label.toLowerCase()];
     const color = brandColor(label);
     const mono = esc(monogram(label));
@@ -567,7 +574,7 @@
         supabase.from('hero_badges').select('label').order('sort_order'),
         supabase.from('solutions').select('*').order('sort_order'),
         supabase.from('projects').select('*').order('sort_order'),
-        supabase.from('stack_items').select('label').order('sort_order'),
+        supabase.from('stack_items').select('label,logo_url').order('sort_order'),
         supabase.from('about_stats').select('*').order('sort_order')
       ]);
 
@@ -591,6 +598,14 @@
       document.getElementById('footer-name').textContent = c.footer_name ? `Built by ${c.footer_name}.` : '';
       document.getElementById('footer-location').textContent = c.footer_location || '';
 
+      // Booking: show live Google Calendar embed if a link is set, otherwise keep the plain form
+      if (c.booking_calendar_url){
+        document.getElementById('booking-calendar-embed').innerHTML = `<iframe src="${esc(c.booking_calendar_url)}" title="Book a call"></iframe>`;
+        document.getElementById('booking-calendar-embed').style.display = 'block';
+        document.getElementById('booking-form').style.display = 'none';
+        document.getElementById('booking-sub').textContent = "Pick a time that works for you — it's synced to my real availability.";
+      }
+
       const initialsText = initials(c.hero_name);
       if (c.hero_photo_url){
         document.getElementById('hero-photo-wrap').innerHTML = `<img src="${esc(c.hero_photo_url)}" alt="${esc(c.hero_name || 'Profile photo')}">`;
@@ -607,12 +622,11 @@
         <div class="badge-chip ${badgeClasses[i] || ''}"><span class="dot"></span>${esc(b.label)}</div>
       `).join('');
 
-      const stackLabels = (stack||[]).map(s => s.label);
-      const marqueeItems = (list) => list.map(l => `<span class="marquee-item">${logoMark(l,26)}${esc(l)}<span class="sep">/</span></span>`).join('');
-      document.getElementById('marquee-track').innerHTML = marqueeItems(stackLabels) + marqueeItems(stackLabels);
+      const marqueeItems = (list) => list.map(s => `<span class="marquee-item">${logoMark(s.label,26,s.logo_url)}${esc(s.label)}<span class="sep">/</span></span>`).join('');
+      document.getElementById('marquee-track').innerHTML = marqueeItems(stack||[]) + marqueeItems(stack||[]);
 
       document.getElementById('stack-container').innerHTML = (stack||[]).map(s => `
-        <div class="stack-tile">${logoMark(s.label,56)}<span class="stack-label">${esc(s.label)}</span></div>
+        <div class="stack-tile">${logoMark(s.label,56,s.logo_url)}<span class="stack-label">${esc(s.label)}</span></div>
       `).join('') || '<p class="load-note">No tools added yet.</p>';
 
       document.getElementById('solutions-container').innerHTML = renderSolutions(solutions);

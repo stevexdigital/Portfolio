@@ -30,7 +30,8 @@ create table if not exists public.about_stats (
 create table if not exists public.stack_items (
   id serial primary key,
   sort_order int not null default 0,
-  label text not null
+  label text not null,
+  logo_url text
 );
 
 create table if not exists public.projects (
@@ -116,6 +117,7 @@ insert into public.site_content (key, value) values
   ('hero_sub', 'I build AI agents and automations that answer questions, sort leads, and keep the pipeline moving.'),
   ('hero_photo_url', ''),
   ('favicon_url', ''),
+  ('booking_calendar_url', ''),
   ('about_heading', 'Who''s behind this?'),
   ('about_bio', 'I''m a self-taught automation builder learning by shipping — wiring together AI agents, CRMs, and workflow tools into systems that actually run without me.'),
   ('cta_primary_label', 'See my work'),
