@@ -168,11 +168,6 @@
   .project-links a{ font-size:0.85rem; text-decoration:none; color:var(--text-dim); border-bottom:1px solid var(--line); }
   .project-links a:hover{ color:var(--accent); border-color:var(--accent); }
 
-  /* ---------- STACK (enlarged logo grid) ---------- */
-  .stack-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(130px,1fr)); gap:18px; }
-  .stack-tile{ display:flex; flex-direction:column; align-items:center; gap:12px; background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); padding:26px 12px; }
-  .stack-tile .stack-label{ font-size:0.85rem; color:var(--text-dim); text-align:center; font-weight:500; }
-
   /* ---------- ABOUT ---------- */
   .about-grid{ display:grid; grid-template-columns:0.8fr 1.2fr; gap:56px; align-items:center; }
   @media (max-width:820px){ .about-grid{ grid-template-columns:1fr; } }
@@ -254,7 +249,6 @@
     <div class="brand"><span class="dot"></span><span id="nav-brand">Loading…</span></div>
     <div class="navlinks">
       <a href="#projects">Projects</a>
-      <a href="#stack">Stack</a>
       <a href="#about">About</a>
       <a href="#contact">Contact</a>
       <a class="btn btn-primary" href="#booking">Book a call</a>
@@ -313,16 +307,6 @@
       <h2>Recent projects</h2>
     </div>
     <div class="projects-grid" id="projects-container"><p class="load-note">Loading projects…</p></div>
-  </div>
-</section>
-
-<section class="section" id="stack">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow"><span class="dot"></span>Toolbox</span>
-      <h2>Tools I work in</h2>
-    </div>
-    <div class="stack-grid" id="stack-container"><p class="load-note">Loading…</p></div>
   </div>
 </section>
 
@@ -450,12 +434,18 @@
   // ---- Brand logos: real logos where available, colored monogram fallback otherwise ----
   const BRAND_SLUGS = {
     'supabase':'supabase', 'n8n':'n8n', 'vercel':'vercel', 'github':'github',
-    'claude api':'claude', 'claude':'claude', 'gemini':'googlegemini'
+    'claude api':'claude', 'claude':'claude', 'gemini':'googlegemini',
+    'klaviyo':'klaviyo', 'zapier':'zapier', 'make':'make',
+    'wordpress elementor':'elementor', 'elementor':'elementor', 'wordpress':'wordpress',
+    'activecampaign':'activecampaign', 'active campaign':'activecampaign'
   };
   const BRAND_COLORS = {
     'supabase': '#3ECF8E', 'n8n': '#EA4B71', 'lovable': '#FF3D71', 'groq': '#F55036',
     'claude api': '#D97757', 'claude': '#D97757', 'gemini': '#4285F4', 'vercel': '#111111',
-    'gohighlevel': '#0B9B7D', 'github': '#24292E'
+    'gohighlevel': '#0B9B7D', 'github': '#24292E',
+    'klaviyo': '#25252A', 'zapier': '#FF4A00', 'make': '#6D00CC',
+    'wordpress elementor': '#92003B', 'elementor': '#92003B', 'wordpress': '#21759B',
+    'activecampaign': '#005FFE', 'active campaign': '#005FFE'
   };
   const FALLBACK_PALETTE = ['#6FC3D9','#E8954A','#3EAE6B','#8B6FD9','#D9587A','#3D8FC7'];
   function hashColor(label){
@@ -603,12 +593,8 @@
         <div class="badge-chip ${badgeClasses[i] || ''}"><span class="dot"></span>${esc(b.label)}</div>
       `).join('');
 
-      const marqueeItems = (list) => list.map(s => `<span class="marquee-item">${logoMark(s.label,26,s.logo_url)}${esc(s.label)}<span class="sep">/</span></span>`).join('');
+      const marqueeItems = (list) => list.map(s => `<span class="marquee-item">${logoMark(s.label,34,s.logo_url)}${esc(s.label)}<span class="sep">/</span></span>`).join('');
       document.getElementById('marquee-track').innerHTML = marqueeItems(stack||[]) + marqueeItems(stack||[]);
-
-      document.getElementById('stack-container').innerHTML = (stack||[]).map(s => `
-        <div class="stack-tile">${logoMark(s.label,56,s.logo_url)}<span class="stack-label">${esc(s.label)}</span></div>
-      `).join('') || '<p class="load-note">No tools added yet.</p>';
 
       document.getElementById('solutions-container').innerHTML = renderSolutions(solutions);
       document.getElementById('projects-container').innerHTML = (projects||[]).map(renderProject).join('') || '<p class="load-note">No projects yet.</p>';
