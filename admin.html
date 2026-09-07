@@ -328,6 +328,7 @@
       appShell.style.display = 'flex';
       document.getElementById('whoami').textContent = session.user.email;
       loadAll();
+      restorePanelFromHash();
     } else {
       loginScreen.style.display = 'block';
       appShell.style.display = 'none';
@@ -349,14 +350,29 @@
   });
 
   // ---------- NAV ----------
+  function activatePanel(panelId){
+    const targetBtn = document.querySelector(`nav button[data-panel="${panelId}"]`);
+    if (!targetBtn || !document.getElementById(panelId)) return false;
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('section.panel').forEach(p => p.classList.remove('active'));
+    targetBtn.classList.add('active');
+    document.getElementById(panelId).classList.add('active');
+    return true;
+  }
+
   document.querySelectorAll('nav button').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('section.panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById(btn.dataset.panel).classList.add('active');
+      activatePanel(btn.dataset.panel);
+      location.hash = btn.dataset.panel;
     });
   });
+
+  // Restore the active tab from the URL on load/refresh, and on manual hash changes
+  function restorePanelFromHash(){
+    const panelId = location.hash.replace('#', '');
+    if (panelId) activatePanel(panelId);
+  }
+  window.addEventListener('hashchange', restorePanelFromHash);
 
   function esc(str){ const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
 
