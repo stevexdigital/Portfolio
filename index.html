@@ -8,34 +8,48 @@
 <meta name="description" content="Portfolio of AI agent and workflow automation builds across GoHighLevel, n8n, and Supabase.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
+    --bg: #FFFFFF;
+    --bg-panel: #F5F7FA;
+    --bg-panel-2: #EDF1F5;
+    --grid-line: rgba(15,41,66,0.05);
+    --line: #DCE3EA;
+    --accent: #E8954A;
+    --trace: #1B8FA8;
+    --text: #16202B;
+    --text-dim: #51606F;
+    --text-faint: #8A98A6;
+    --header-bg: rgba(255,255,255,0.85);
+    --radius: 4px;
+    --maxw: 1160px;
+  }
+  :root.dark{
     --bg: #0F2942;
     --bg-panel: #123554;
     --bg-panel-2: #0D2438;
     --grid-line: rgba(143,176,204,0.08);
     --line: #2C5578;
     --accent: #E8954A;
-    --accent-soft: rgba(232,149,74,0.12);
     --trace: #6FC3D9;
     --text: #EDF3F8;
     --text-dim: #8FB0CC;
     --text-faint: #5C7C99;
-    --radius: 4px;
-    --maxw: 1160px;
+    --header-bg: rgba(15,41,66,0.85);
   }
   *{ box-sizing:border-box; }
   html{ scroll-behavior:smooth; }
   body{
     margin:0; background:var(--bg); color:var(--text);
-    font-family:'IBM Plex Sans',sans-serif; font-size:16px; line-height:1.6;
+    font-family:'Montserrat',sans-serif; font-size:16px; line-height:1.6;
     background-image:
       linear-gradient(var(--grid-line) 1px, transparent 1px),
       linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
     background-size: 40px 40px;
+    transition: background-color .3s ease, color .3s ease;
   }
-  h1,h2,h3{ font-family:'Space Grotesk',sans-serif; font-weight:600; margin:0; letter-spacing:-0.01em; }
+  h1,h2,h3{ font-family:'Montserrat',sans-serif; font-weight:700; margin:0; letter-spacing:-0.01em; }
   .mono{ font-family:'IBM Plex Mono',monospace; }
   a{ color:inherit; }
   .wrap{ max-width:var(--maxw); margin:0 auto; padding:0 32px; }
@@ -43,18 +57,38 @@
   @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
 
   /* ---------- NAV ---------- */
-  header{ position:sticky; top:0; z-index:20; background:rgba(15,41,66,0.85); backdrop-filter:blur(6px); border-bottom:1px solid var(--line); }
+  header{ position:sticky; top:0; z-index:20; background:var(--header-bg); backdrop-filter:blur(6px); border-bottom:1px solid var(--line); }
   nav.wrap{ display:flex; align-items:center; justify-content:space-between; height:64px; }
-  .brand{ font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:1.1rem; display:flex; align-items:center; gap:8px; }
+  .brand{ font-weight:700; font-size:1.1rem; display:flex; align-items:center; gap:8px; }
   .brand .dot{ width:8px;height:8px;border-radius:50%; background:var(--accent); box-shadow:0 0 8px var(--accent); }
-  .navlinks{ display:flex; align-items:center; gap:28px; font-size:0.92rem; }
+  .navlinks{ display:flex; align-items:center; gap:24px; font-size:0.92rem; }
   .navlinks a{ text-decoration:none; color:var(--text-dim); transition:color .15s; }
   .navlinks a:hover{ color:var(--text); }
-  .btn{ display:inline-block; padding:11px 20px; border-radius:var(--radius); text-decoration:none; font-size:0.9rem; font-weight:500; transition:transform .12s ease, border-color .12s ease; white-space:nowrap; }
-  .btn-primary{ background:var(--accent); color:#12233A; }
+  .btn{ display:inline-block; padding:11px 20px; border-radius:var(--radius); text-decoration:none; font-size:0.9rem; font-weight:600; transition:transform .12s ease, border-color .12s ease; white-space:nowrap; }
+  .btn-primary{ background:var(--accent); color:#12233A; border:1px solid var(--accent); cursor:pointer; }
   .btn-primary:hover{ transform:translateY(-1px); }
-  .btn-ghost{ border:1px solid var(--line); color:var(--text); }
+  .btn-ghost{ border:1px solid var(--line); color:var(--text); background:transparent; cursor:pointer; }
   .btn-ghost:hover{ border-color:var(--text-dim); }
+
+  #theme-toggle{
+    width:36px; height:36px; border-radius:50%; padding:0;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--bg-panel); border:1px solid var(--line); cursor:pointer; flex-shrink:0;
+  }
+  #theme-toggle svg{ width:17px; height:17px; stroke:var(--text); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  #theme-toggle .icon-moon{ display:none; }
+  :root.dark #theme-toggle .icon-sun{ display:none; }
+  :root.dark #theme-toggle .icon-moon{ display:block; }
+
+  /* ---------- THEME WIPE TRANSITION ---------- */
+  #theme-wipe{
+    position:fixed; inset:0; z-index:9999; pointer-events:none;
+    width:0%; overflow:hidden;
+  }
+  #theme-wipe::after{
+    content:''; position:absolute; top:0; right:0; height:100%; width:3px;
+    background:var(--accent); box-shadow:0 0 14px var(--accent), 0 0 30px var(--accent);
+  }
 
   /* ---------- HERO ---------- */
   .hero{ padding:80px 0 100px; }
@@ -77,12 +111,12 @@
     display:flex; align-items:center; justify-content:center;
   }
   .photo-wrap img{ width:100%; height:100%; object-fit:cover; }
-  .photo-placeholder{ font-family:'Space Grotesk',sans-serif; font-size:3rem; font-weight:600; color:var(--text-faint); }
+  .photo-placeholder{ font-size:3rem; font-weight:700; color:var(--text-faint); }
   .badge-chip{
     position:absolute; font-family:'IBM Plex Mono',monospace; font-size:0.72rem;
     background:var(--bg-panel); border:1px solid var(--line); border-radius:999px;
     padding:7px 14px; white-space:nowrap; display:flex; align-items:center; gap:6px;
-    box-shadow:0 4px 14px rgba(0,0,0,0.25);
+    box-shadow:0 4px 14px rgba(0,0,0,0.15);
   }
   .badge-chip .dot{ width:5px;height:5px;border-radius:50%; background:var(--accent); }
   .badge-chip.b1{ top:6%; left:-6%; }
@@ -97,17 +131,14 @@
 
   /* ---------- MARQUEE ---------- */
   .marquee-band{ border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--bg-panel-2); overflow:hidden; padding:16px 0; }
-  .marquee-track{ display:flex; gap:48px; width:max-content; animation:scroll-left 28s linear infinite; }
+  .marquee-track{ display:flex; gap:44px; width:max-content; animation:scroll-left 28s linear infinite; }
   @keyframes scroll-left{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
   .marquee-item{ font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--text-dim); white-space:nowrap; display:flex; align-items:center; gap:10px; }
-  .marquee-item .sep{ color:var(--accent); }
-  .brand-mark{
-    display:inline-flex; align-items:center; justify-content:center;
-    width:22px; height:22px; border-radius:6px; flex-shrink:0;
-    font-family:'IBM Plex Mono',monospace; font-size:0.68rem; font-weight:600;
-    color:#fff; letter-spacing:-0.02em;
-  }
-  .tag-chip{ display:inline-flex; align-items:center; gap:8px; font-size:0.9rem; color:var(--text); }
+  .marquee-item .sep{ color:var(--accent); margin-left:34px; }
+
+  /* ---------- LOGO MARKS ---------- */
+  .logo-mark{ display:inline-flex; align-items:center; justify-content:center; border-radius:10px; flex-shrink:0; }
+  .logo-fallback{ font-family:'IBM Plex Mono',monospace; color:#fff; font-weight:600; }
 
   /* ---------- SECTIONS ---------- */
   .section{ padding:90px 0; }
@@ -132,7 +163,8 @@
   .project-card h3{ font-size:1.1rem; }
   .project-card .who{ font-size:0.8rem; color:var(--text-faint); margin-top:4px; }
   .project-status{ font-family:'IBM Plex Mono',monospace; font-size:0.72rem; padding:3px 9px; border-radius:999px; border:1px solid var(--line); color:var(--text-dim); white-space:nowrap; }
-  .project-status.live{ color:#8FE0A8; border-color:#2E5C3F; }
+  .project-status.live{ color:#1E8F4E; border-color:#1E8F4E; }
+  :root.dark .project-status.live{ color:#8FE0A8; border-color:#2E5C3F; }
   .project-card p.desc{ color:var(--text-dim); font-size:0.9rem; margin-top:14px; flex-grow:1; }
   .mini-pipeline{ display:flex; flex-wrap:wrap; gap:6px; margin-top:16px; }
   .mini-node{ font-family:'IBM Plex Mono',monospace; font-size:0.7rem; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:3px; padding:4px 8px; }
@@ -146,6 +178,11 @@
   .project-links a{ font-size:0.85rem; text-decoration:none; color:var(--text-dim); border-bottom:1px solid var(--line); }
   .project-links a:hover{ color:var(--accent); border-color:var(--accent); }
 
+  /* ---------- STACK (enlarged logo grid) ---------- */
+  .stack-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(130px,1fr)); gap:18px; }
+  .stack-tile{ display:flex; flex-direction:column; align-items:center; gap:12px; background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); padding:26px 12px; }
+  .stack-tile .stack-label{ font-size:0.85rem; color:var(--text-dim); text-align:center; font-weight:500; }
+
   /* ---------- ABOUT ---------- */
   .about-grid{ display:grid; grid-template-columns:0.8fr 1.2fr; gap:56px; align-items:center; }
   @media (max-width:820px){ .about-grid{ grid-template-columns:1fr; } }
@@ -154,8 +191,24 @@
   .about-photo .photo-placeholder{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
   .about-text p{ color:var(--text-dim); margin-top:14px; max-width:56ch; }
   .stats-row{ display:flex; gap:36px; margin-top:28px; flex-wrap:wrap; }
-  .stat .value{ font-family:'Space Grotesk',sans-serif; font-size:1.8rem; font-weight:600; color:var(--accent); }
+  .stat .value{ font-size:1.8rem; font-weight:700; color:var(--accent); }
   .stat .label{ font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text-faint); margin-top:2px; }
+
+  /* ---------- BOOKING ---------- */
+  .booking-box{ background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); padding:36px; max-width:640px; }
+  .booking-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:560px){ .booking-row{ grid-template-columns:1fr; } }
+  .field{ margin-top:16px; }
+  .field label{ display:block; font-size:0.82rem; color:var(--text-dim); margin-bottom:6px; }
+  .field input, .field textarea{
+    width:100%; background:var(--bg); border:1px solid var(--line); color:var(--text);
+    padding:10px 12px; border-radius:var(--radius); font-family:inherit; font-size:0.92rem;
+  }
+  .field textarea{ min-height:80px; resize:vertical; }
+  .booking-note{ font-size:0.85rem; margin-top:14px; min-height:1.2em; }
+  .booking-note.ok{ color:#1E8F4E; }
+  :root.dark .booking-note.ok{ color:#8FE0A8; }
+  .booking-note.err{ color:var(--accent); }
 
   /* ---------- CONTACT ---------- */
   .contact-box{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:24px; padding:44px; background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); }
@@ -167,28 +220,43 @@
   .load-note{ color:var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size:0.85rem; padding:20px 0; }
   .error-note{ color:var(--accent); font-family:'IBM Plex Mono',monospace; font-size:0.85rem; padding:20px 0; max-width:60ch; }
 
-  /* ---------- CHAT BUTTON (placeholder for future assistant) ---------- */
+  /* ---------- CHAT WIDGET ---------- */
   #chat-fab{
-    position: fixed; bottom: 24px; right: 24px; z-index: 30;
-    width: 56px; height: 56px; border-radius: 50%;
-    background: var(--accent); border: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
-    transition: transform .15s ease;
+    position:fixed; bottom:24px; right:24px; z-index:30;
+    width:56px; height:56px; border-radius:50%;
+    background:var(--accent); border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 20px rgba(0,0,0,0.25);
+    transition:transform .15s ease;
   }
-  #chat-fab:hover{ transform: translateY(-2px); }
-  #chat-fab svg{ width: 24px; height: 24px; stroke: #12233A; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  #chat-tooltip{
-    position: fixed; bottom: 90px; right: 24px; z-index: 30;
-    background: var(--bg-panel); border: 1px solid var(--line); color: var(--text);
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem;
-    padding: 8px 14px; border-radius: var(--radius);
-    opacity: 0; pointer-events: none; transition: opacity .2s ease;
+  #chat-fab:hover{ transform:translateY(-2px); }
+  #chat-fab svg{ width:24px; height:24px; stroke:#12233A; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+  #chat-panel{
+    position:fixed; bottom:92px; right:24px; z-index:30;
+    width:340px; max-width:calc(100vw - 32px); height:440px; max-height:calc(100vh - 140px);
+    background:var(--bg); border:1px solid var(--line); border-radius:8px;
+    box-shadow:0 12px 40px rgba(0,0,0,0.25);
+    display:none; flex-direction:column; overflow:hidden;
   }
-  #chat-tooltip.show{ opacity: 1; }
+  #chat-panel.open{ display:flex; }
+  .chat-header{ padding:14px 16px; background:var(--bg-panel); border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; }
+  .chat-header .title{ font-weight:600; font-size:0.92rem; }
+  .chat-header .status{ font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--text-faint); }
+  .chat-close{ background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:1.1rem; line-height:1; padding:4px; }
+  .chat-messages{ flex-grow:1; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:10px; }
+  .chat-bubble{ max-width:85%; padding:9px 13px; border-radius:12px; font-size:0.88rem; line-height:1.45; }
+  .chat-bubble.bot{ background:var(--bg-panel); align-self:flex-start; border-bottom-left-radius:2px; }
+  .chat-bubble.user{ background:var(--accent); color:#12233A; align-self:flex-end; border-bottom-right-radius:2px; }
+  .chat-input-row{ display:flex; gap:8px; padding:12px; border-top:1px solid var(--line); }
+  .chat-input-row input{ flex-grow:1; background:var(--bg-panel); border:1px solid var(--line); color:var(--text); padding:9px 12px; border-radius:6px; font-family:inherit; font-size:0.88rem; }
+  .chat-send{ background:var(--accent); border:none; color:#12233A; width:36px; height:36px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .chat-send svg{ width:16px; height:16px; }
 </style>
 </head>
 <body>
+
+<div id="theme-wipe"></div>
 
 <header>
   <nav class="wrap">
@@ -197,7 +265,12 @@
       <a href="#projects">Projects</a>
       <a href="#stack">Stack</a>
       <a href="#about">About</a>
+      <a href="#booking">Book a call</a>
       <a class="btn btn-ghost" href="#contact">Contact</a>
+      <button id="theme-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">
+        <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
     </div>
   </nav>
 </header>
@@ -258,7 +331,7 @@
       <span class="eyebrow"><span class="dot"></span>Toolbox</span>
       <h2>Tools I work in</h2>
     </div>
-    <div class="tags" id="stack-container" style="font-size:0.95rem;"></div>
+    <div class="stack-grid" id="stack-container"><p class="load-note">Loading…</p></div>
   </div>
 </section>
 
@@ -274,6 +347,46 @@
       <p id="about-bio"></p>
       <div class="stats-row" id="stats-container"></div>
     </div>
+  </div>
+</section>
+
+<section class="section" id="booking">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Let's talk</span>
+      <h2>Book a call</h2>
+      <p>Tell me a bit about what you need and a good time to reach you — I'll follow up by email.</p>
+    </div>
+    <form class="booking-box" id="booking-form">
+      <div class="booking-row">
+        <div class="field">
+          <label for="bk-name">Name</label>
+          <input id="bk-name" name="name" required>
+        </div>
+        <div class="field">
+          <label for="bk-email">Email</label>
+          <input id="bk-email" name="email" type="email" required>
+        </div>
+      </div>
+      <div class="booking-row">
+        <div class="field">
+          <label for="bk-date">Preferred date</label>
+          <input id="bk-date" name="date" type="date">
+        </div>
+        <div class="field">
+          <label for="bk-time">Preferred time</label>
+          <input id="bk-time" name="time" placeholder="e.g. 2:00 PM">
+        </div>
+      </div>
+      <div class="field">
+        <label for="bk-message">What do you need help with?</label>
+        <textarea id="bk-message" name="message"></textarea>
+      </div>
+      <div class="field">
+        <button class="btn btn-primary" type="submit" id="bk-submit">Request a call</button>
+        <span class="booking-note" id="bk-note"></span>
+      </div>
+    </form>
   </div>
 </section>
 
@@ -294,18 +407,31 @@
   <span id="footer-location"></span>
 </footer>
 
-<div id="chat-tooltip">Chat — coming soon</div>
-<button id="chat-fab" aria-label="Chat with us">
+<button id="chat-fab" aria-label="Open chat">
   <svg viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-3.9-.94L3 20l1.06-3.94A8.4 8.4 0 0 1 3 11.5 8.5 8.5 0 0 1 11.5 3 8.5 8.5 0 0 1 21 11.5z"/></svg>
 </button>
+<div id="chat-panel">
+  <div class="chat-header">
+    <div>
+      <div class="title">Chat</div>
+      <div class="status">Not fully live yet</div>
+    </div>
+    <button class="chat-close" id="chat-close" aria-label="Close chat">✕</button>
+  </div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div class="chat-input-row">
+    <input id="chat-input" placeholder="Type a message…" autocomplete="off">
+    <button class="chat-send" id="chat-send" aria-label="Send">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-  // ---- EDIT THESE TWO LINES with your Supabase project's values ----
   const SUPABASE_URL = 'https://vqthioychxlqknfwboqk.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_pD_0O9o-4s6hzKh4wUFuRg_y6MoUoF8';
-  // --------------------------------------------------------------------
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -315,13 +441,49 @@
     return name.trim().split(/\s+/).slice(0,2).map(w => w[0]?.toUpperCase() || '').join('');
   }
 
-  // ---- Brand monogram chips (used since exact trademarked logos aren't available here) ----
+  // ---------- THEME TOGGLE + WIPE ANIMATION ----------
+  const THEME_BG = { light: '#FFFFFF', dark: '#0F2942' };
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function applyTheme(mode){
+    document.documentElement.classList.toggle('dark', mode === 'dark');
+  }
+  applyTheme(localStorage.getItem('site-theme') || 'light');
+
+  document.getElementById('theme-toggle').addEventListener('click', () => {
+    const current = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('site-theme', next);
+
+    if (reduceMotion){ applyTheme(next); return; }
+
+    const wipe = document.getElementById('theme-wipe');
+    wipe.style.transition = 'none';
+    wipe.style.width = '0%';
+    wipe.style.background = THEME_BG[next];
+    // force reflow so the transition re-applies cleanly each click
+    void wipe.offsetWidth;
+    wipe.style.transition = 'width 650ms cubic-bezier(.65,0,.35,1)';
+    requestAnimationFrame(() => { wipe.style.width = '100%'; });
+
+    setTimeout(() => {
+      applyTheme(next);
+      wipe.style.transition = 'none';
+      wipe.style.width = '0%';
+    }, 680);
+  });
+
+  // ---- Brand logos: real logos where available, colored monogram fallback otherwise ----
+  const BRAND_SLUGS = {
+    'supabase':'supabase', 'n8n':'n8n', 'vercel':'vercel', 'github':'github',
+    'claude api':'claude', 'claude':'claude', 'gemini':'googlegemini'
+  };
   const BRAND_COLORS = {
     'supabase': '#3ECF8E', 'n8n': '#EA4B71', 'lovable': '#FF3D71', 'groq': '#F55036',
     'claude api': '#D97757', 'claude': '#D97757', 'gemini': '#4285F4', 'vercel': '#111111',
     'gohighlevel': '#0B9B7D', 'github': '#24292E'
   };
-  const FALLBACK_PALETTE = ['#6FC3D9','#E8954A','#8FE0A8','#B48EE0','#E85D75','#5CA0D3'];
+  const FALLBACK_PALETTE = ['#6FC3D9','#E8954A','#3EAE6B','#8B6FD9','#D9587A','#3D8FC7'];
   function hashColor(label){
     let h = 0;
     for (let i = 0; i < label.length; i++) h = (h * 31 + label.charCodeAt(i)) >>> 0;
@@ -333,14 +495,23 @@
     if (trimmed.includes(' ')) return initials(trimmed);
     return trimmed.slice(0,2);
   }
-  function brandMark(label){
-    return `<span class="brand-mark" style="background:${brandColor(label)}">${esc(monogram(label))}</span>`;
+  function logoMark(label, sizePx){
+    const slug = BRAND_SLUGS[label.toLowerCase()];
+    const color = brandColor(label);
+    const mono = esc(monogram(label));
+    const imgSize = Math.round(sizePx * 0.55);
+    const fallbackFont = Math.round(sizePx * 0.38);
+    const imgTag = slug
+      ? `<img src="https://cdn.simpleicons.org/${slug}/ffffff" alt="${esc(label)}" style="width:${imgSize}px;height:${imgSize}px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">`
+      : '';
+    const fallbackDisplay = slug ? 'none' : 'inline-flex';
+    return `<span class="logo-mark" style="width:${sizePx}px;height:${sizePx}px;background:${color}">
+      ${imgTag}
+      <span class="logo-fallback" style="display:${fallbackDisplay}; align-items:center; justify-content:center; font-size:${fallbackFont}px;">${mono}</span>
+    </span>`;
   }
   function setFavicon(brandName, uploadedUrl){
-    if (uploadedUrl){
-      document.getElementById('favicon').href = uploadedUrl;
-      return;
-    }
+    if (uploadedUrl){ document.getElementById('favicon').href = uploadedUrl; return; }
     const initialsText = esc(initials(brandName));
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
       <rect width="64" height="64" rx="14" fill="#0F2942"/>
@@ -420,7 +591,6 @@
       document.getElementById('footer-name').textContent = c.footer_name ? `Built by ${c.footer_name}.` : '';
       document.getElementById('footer-location').textContent = c.footer_location || '';
 
-      // Hero + about photo (same source image)
       const initialsText = initials(c.hero_name);
       if (c.hero_photo_url){
         document.getElementById('hero-photo-wrap').innerHTML = `<img src="${esc(c.hero_photo_url)}" alt="${esc(c.hero_name || 'Profile photo')}">`;
@@ -432,20 +602,18 @@
         document.getElementById('about-photo-placeholder').textContent = initialsText;
       }
 
-      // Hero badges positioned around the photo
       const badgeClasses = ['b1','b2','b3'];
       document.getElementById('hero-badges').innerHTML = (badges||[]).slice(0,3).map((b,i) => `
         <div class="badge-chip ${badgeClasses[i] || ''}"><span class="dot"></span>${esc(b.label)}</div>
       `).join('');
 
-      // Marquee (duplicated once for seamless loop)
       const stackLabels = (stack||[]).map(s => s.label);
-      const marqueeItems = (list) => list.map(l => `<span class="marquee-item">${brandMark(l)}${esc(l)}<span class="sep">/</span></span>`).join('');
+      const marqueeItems = (list) => list.map(l => `<span class="marquee-item">${logoMark(l,26)}${esc(l)}<span class="sep">/</span></span>`).join('');
       document.getElementById('marquee-track').innerHTML = marqueeItems(stackLabels) + marqueeItems(stackLabels);
 
-      // Stack tags (in Stack section)
-      document.getElementById('stack-container').innerHTML = (stack||[])
-        .map(s => `<span class="tag-chip">${brandMark(s.label)}${esc(s.label)}</span>`).join('');
+      document.getElementById('stack-container').innerHTML = (stack||[]).map(s => `
+        <div class="stack-tile">${logoMark(s.label,56)}<span class="stack-label">${esc(s.label)}</span></div>
+      `).join('') || '<p class="load-note">No tools added yet.</p>';
 
       document.getElementById('solutions-container').innerHTML = renderSolutions(solutions);
       document.getElementById('projects-container').innerHTML = (projects||[]).map(renderProject).join('') || '<p class="load-note">No projects yet.</p>';
@@ -463,12 +631,70 @@
 
   loadSite();
 
-  // ---- Chat button placeholder — swap this for the real widget once she's built ----
-  document.getElementById('chat-fab').addEventListener('click', () => {
-    const tip = document.getElementById('chat-tooltip');
-    tip.classList.add('show');
-    setTimeout(() => tip.classList.remove('show'), 2200);
+  // ---------- BOOKING FORM ----------
+  document.getElementById('booking-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const note = document.getElementById('bk-note');
+    const btn = document.getElementById('bk-submit');
+    const payload = {
+      name: document.getElementById('bk-name').value.trim(),
+      email: document.getElementById('bk-email').value.trim(),
+      preferred_date: document.getElementById('bk-date').value || null,
+      preferred_time: document.getElementById('bk-time').value.trim() || null,
+      message: document.getElementById('bk-message').value.trim() || null
+    };
+    if (!payload.name || !payload.email){
+      note.textContent = 'Name and email are required.';
+      note.className = 'booking-note err';
+      return;
+    }
+    btn.disabled = true;
+    note.textContent = 'Sending…';
+    note.className = 'booking-note';
+    const { error } = await supabase.from('bookings').insert(payload);
+    btn.disabled = false;
+    if (error){
+      note.textContent = 'Something went wrong — try again or email directly below.';
+      note.className = 'booking-note err';
+    } else {
+      note.textContent = "Got it — I'll follow up by email soon.";
+      note.className = 'booking-note ok';
+      e.target.reset();
+    }
   });
+
+  // ---------- CHAT WIDGET (UI only — not connected to a real assistant yet) ----------
+  const chatPanel = document.getElementById('chat-panel');
+  const chatMessages = document.getElementById('chat-messages');
+  const chatInput = document.getElementById('chat-input');
+  let chatOpened = false;
+
+  function addBubble(text, who){
+    const b = document.createElement('div');
+    b.className = 'chat-bubble ' + who;
+    b.textContent = text;
+    chatMessages.appendChild(b);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  document.getElementById('chat-fab').addEventListener('click', () => {
+    chatPanel.classList.toggle('open');
+    if (!chatOpened && chatPanel.classList.contains('open')){
+      chatOpened = true;
+      addBubble("Hey! This chat isn't wired up to a real assistant yet — I'm still building her. Feel free to leave a message and I'll read it, or email me directly below.", 'bot');
+    }
+  });
+  document.getElementById('chat-close').addEventListener('click', () => chatPanel.classList.remove('open'));
+
+  function sendChat(){
+    const text = chatInput.value.trim();
+    if (!text) return;
+    addBubble(text, 'user');
+    chatInput.value = '';
+    setTimeout(() => addBubble("Thanks — noted! For a real reply right now, use the booking form or email above.", 'bot'), 500);
+  }
+  document.getElementById('chat-send').addEventListener('click', sendChat);
+  chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
 </script>
 
 </body>

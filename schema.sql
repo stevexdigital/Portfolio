@@ -47,6 +47,16 @@ create table if not exists public.projects (
   link_url text
 );
 
+create table if not exists public.bookings (
+  id serial primary key,
+  created_at timestamptz not null default now(),
+  name text not null,
+  email text not null,
+  preferred_date date,
+  preferred_time text,
+  message text
+);
+
 -- ---------- Security: public can read everything, only logged-in you can write ----------
 alter table public.site_content enable row level security;
 alter table public.hero_badges enable row level security;
@@ -67,6 +77,21 @@ begin
     execute format('create policy "Authenticated write" on public.%I for all using (auth.role() = ''authenticated'') with check (auth.role() = ''authenticated'')', t);
   end loop;
 end $$;
+
+-- ---------- Bookings: anyone can submit, only you can read/delete ----------
+alter table public.bookings enable row level security;
+
+drop policy if exists "Public can submit bookings" on public.bookings;
+create policy "Public can submit bookings" on public.bookings
+  for insert with check (true);
+
+drop policy if exists "Only owner can read bookings" on public.bookings;
+create policy "Only owner can read bookings" on public.bookings
+  for select using (auth.role() = 'authenticated');
+
+drop policy if exists "Only owner can delete bookings" on public.bookings;
+create policy "Only owner can delete bookings" on public.bookings
+  for delete using (auth.role() = 'authenticated');
 
 -- ---------- Storage: a public bucket for your hero photo, only you can upload ----------
 insert into storage.buckets (id, name, public)
