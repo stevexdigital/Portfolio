@@ -165,6 +165,10 @@
       <h2>Hero badges</h2>
       <p class="hint">The small floating labels next to your hero photo, e.g. "n8n Builder".</p>
       <div id="hero-badges-list"></div>
+      <div class="row" style="margin-top:14px;">
+        <button class="primary" id="save-badges-btn">Save all</button>
+        <span class="save-note" id="badges-note"></span>
+      </div>
       <div class="add-form">
         <label>New badge label</label>
         <input id="new-badge-label">
@@ -175,6 +179,10 @@
     <section class="panel" id="panel-solutions">
       <h2>Solutions ("what I build")</h2>
       <div id="solutions-list"></div>
+      <div class="row" style="margin-top:14px;">
+        <button class="primary" id="save-solutions-btn">Save all</button>
+        <span class="save-note" id="solutions-note"></span>
+      </div>
       <div class="add-form">
         <label>Title</label><input id="new-solution-title">
         <label>Description</label><textarea id="new-solution-desc"></textarea>
@@ -186,6 +194,10 @@
       <h2>Projects</h2>
       <p class="hint">For "Pipeline" layout, list steps separated by commas. For "Features" layout, one feature per line as <em>label | description</em>.</p>
       <div id="projects-list"></div>
+      <div class="row" style="margin-top:14px;">
+        <button class="primary" id="save-projects-btn">Save all</button>
+        <span class="save-note" id="projects-note"></span>
+      </div>
       <div class="add-form">
         <label>Title</label><input id="new-project-title">
         <label>Who / context</label><input id="new-project-who">
@@ -209,6 +221,10 @@
     <section class="panel" id="panel-stack">
       <h2>Tools / stack</h2>
       <div id="stack-list"></div>
+      <div class="row" style="margin-top:14px;">
+        <button class="primary" id="save-stack-btn">Save all</button>
+        <span class="save-note" id="stack-note"></span>
+      </div>
       <div class="add-form">
         <label>New tool name</label>
         <input id="new-stack-label">
@@ -220,6 +236,10 @@
       <h2>About stats</h2>
       <p class="hint">E.g. "Systems built" / "4". Use real numbers — these show as-is on the site.</p>
       <div id="stats-list"></div>
+      <div class="row" style="margin-top:14px;">
+        <button class="primary" id="save-stats-btn">Save all</button>
+        <span class="save-note" id="stats-note"></span>
+      </div>
       <div class="add-form">
         <label>Label</label><input id="new-stat-label">
         <label>Value</label><input id="new-stat-value">
@@ -361,7 +381,28 @@
     if (!error) toast('Saved');
   });
 
-  // ---------- GENERIC SIMPLE LIST (hero_badges, stack_items) ----------
+  // ---------- Shared: batch-save all rows in a container at once ----------
+  async function saveAllCards(table, containerId, noteId, fieldTypes){
+    const container = document.getElementById(containerId);
+    const note = document.getElementById(noteId);
+    const cards = container.querySelectorAll('.card[data-id]');
+    const rows = Array.from(cards).map(card => {
+      const row = { id: Number(card.dataset.id) };
+      card.querySelectorAll('[data-field]').forEach(el => {
+        const type = (fieldTypes && fieldTypes[el.dataset.field]) || (el.type === 'number' ? 'number' : 'text');
+        row[el.dataset.field] = type === 'number' ? Number(el.value)
+          : type === 'csv' ? el.value.split(',').map(s=>s.trim()).filter(Boolean)
+          : el.value;
+      });
+      return row;
+    });
+    if (!rows.length){ note.textContent = 'Nothing to save.'; return; }
+    const { error } = await supabase.from(table).upsert(rows);
+    note.textContent = error ? 'Error: ' + error.message : 'Saved.';
+    if (!error) toast('Saved');
+  }
+
+  // ---------- GENERIC SIMPLE LIST (hero_badges) ----------
   function simpleList(table, containerId, fieldKey, placeholder){
     return {
       async load(){
@@ -372,24 +413,11 @@
             <div class="row">
               <input style="flex:1" data-field="${fieldKey}" value="${esc(row[fieldKey])}">
               <input type="number" style="width:70px" data-field="sort_order" value="${row.sort_order}" title="order">
-              <button data-save>Save</button>
               <button class="danger" data-delete>Delete</button>
             </div>
           </div>
         `).join('') || `<p class="hint">${placeholder}</p>`;
 
-        container.querySelectorAll('[data-save]').forEach(btn => {
-          btn.addEventListener('click', async (e) => {
-            const card = e.target.closest('.card');
-            const id = card.dataset.id;
-            const payload = {};
-            card.querySelectorAll('[data-field]').forEach(el => {
-              payload[el.dataset.field] = el.type === 'number' ? Number(el.value) : el.value;
-            });
-            const { error } = await supabase.from(table).update(payload).eq('id', id);
-            toast(error ? 'Error: ' + error.message : 'Saved');
-          });
-        });
         container.querySelectorAll('[data-delete]').forEach(btn => {
           btn.addEventListener('click', async (e) => {
             const card = e.target.closest('.card');
@@ -403,6 +431,7 @@
   }
 
   const heroBadges = simpleList('hero_badges', 'hero-badges-list', 'label', 'No badges yet.');
+  document.getElementById('save-badges-btn').addEventListener('click', () => saveAllCards('hero_badges', 'hero-badges-list', 'badges-note'));
 
   document.getElementById('add-badge-btn').addEventListener('click', async () => {
     const label = document.getElementById('new-badge-label').value.trim();
@@ -421,7 +450,6 @@
         <div class="row">
           <input style="flex:1" data-field="label" value="${esc(row.label)}">
           <input type="number" style="width:70px" data-field="sort_order" value="${row.sort_order}" title="order">
-          <button data-save>Save</button>
           <button class="danger" data-delete>Delete</button>
         </div>
         <div class="row" style="margin-top:12px; align-items:center;">
@@ -433,15 +461,6 @@
       </div>
     `).join('') || `<p class="hint">No tools yet.</p>`;
 
-    container.querySelectorAll('[data-save]').forEach(btn => btn.addEventListener('click', async (e) => {
-      const card = e.target.closest('.card');
-      const payload = {
-        label: card.querySelector('[data-field="label"]').value,
-        sort_order: Number(card.querySelector('[data-field="sort_order"]').value)
-      };
-      const { error } = await supabase.from('stack_items').update(payload).eq('id', card.dataset.id);
-      toast(error ? 'Error: ' + error.message : 'Saved');
-    }));
     container.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async (e) => {
       const card = e.target.closest('.card');
       if (!confirm('Delete this item?')) return;
@@ -474,6 +493,7 @@
     if (!error){ document.getElementById('new-stack-label').value=''; loadStackItems(); toast('Added'); }
     else toast('Error: ' + error.message);
   });
+  document.getElementById('save-stack-btn').addEventListener('click', () => saveAllCards('stack_items', 'stack-list', 'stack-note'));
 
   // ---------- SOLUTIONS ----------
   async function loadSolutions(){
@@ -484,18 +504,11 @@
         <label>Title</label><input data-field="title" value="${esc(row.title)}">
         <label>Description</label><textarea data-field="description">${esc(row.description)}</textarea>
         <div class="row" style="margin-top:10px;">
-          <button data-save>Save</button>
           <button class="danger" data-delete>Delete</button>
         </div>
       </div>
     `).join('') || `<p class="hint">No solutions yet.</p>`;
 
-    container.querySelectorAll('[data-save]').forEach(btn => btn.addEventListener('click', async (e) => {
-      const card = e.target.closest('.card');
-      const payload = { title: card.querySelector('[data-field="title"]').value, description: card.querySelector('[data-field="description"]').value };
-      const { error } = await supabase.from('solutions').update(payload).eq('id', card.dataset.id);
-      toast(error ? 'Error: ' + error.message : 'Saved');
-    }));
     container.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async (e) => {
       const card = e.target.closest('.card');
       if (!confirm('Delete this solution?')) return;
@@ -503,6 +516,7 @@
       if (!error){ card.remove(); toast('Deleted'); } else toast('Error: ' + error.message);
     }));
   }
+  document.getElementById('save-solutions-btn').addEventListener('click', () => saveAllCards('solutions', 'solutions-list', 'solutions-note'));
 
   document.getElementById('add-solution-btn').addEventListener('click', async () => {
     const title = document.getElementById('new-solution-title').value.trim();
@@ -527,18 +541,11 @@
           <div><label>Value</label><input data-field="value" value="${esc(row.value)}"></div>
         </div>
         <div class="row" style="margin-top:10px;">
-          <button data-save>Save</button>
           <button class="danger" data-delete>Delete</button>
         </div>
       </div>
     `).join('') || `<p class="hint">No stats yet.</p>`;
 
-    container.querySelectorAll('[data-save]').forEach(btn => btn.addEventListener('click', async (e) => {
-      const card = e.target.closest('.card');
-      const payload = { label: card.querySelector('[data-field="label"]').value, value: card.querySelector('[data-field="value"]').value };
-      const { error } = await supabase.from('about_stats').update(payload).eq('id', card.dataset.id);
-      toast(error ? 'Error: ' + error.message : 'Saved');
-    }));
     container.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async (e) => {
       const card = e.target.closest('.card');
       if (!confirm('Delete this stat?')) return;
@@ -546,6 +553,7 @@
       if (!error){ card.remove(); toast('Deleted'); } else toast('Error: ' + error.message);
     }));
   }
+  document.getElementById('save-stats-btn').addEventListener('click', () => saveAllCards('about_stats', 'stats-list', 'stats-note'));
 
   document.getElementById('add-stat-btn').addEventListener('click', async () => {
     const label = document.getElementById('new-stat-label').value.trim();
@@ -605,26 +613,11 @@
         <label>Link URL</label>
         <input data-field="link_url" value="${esc(row.link_url)}">
         <div class="row" style="margin-top:12px;">
-          <button data-save>Save</button>
           <button class="danger" data-delete>Delete</button>
         </div>
       </div>
     `).join('') || `<p class="hint">No projects yet.</p>`;
 
-    container.querySelectorAll('[data-save]').forEach(btn => btn.addEventListener('click', async (e) => {
-      const card = e.target.closest('.card');
-      const get = (f) => card.querySelector(`[data-field="${f}"]`).value;
-      const payload = {
-        title: get('title'), who: get('who'), status: get('status'), layout: get('layout'),
-        description: get('description'),
-        nodes: get('nodes_csv') ? csvToNodes(get('nodes_csv')) : null,
-        features: get('features_lines') ? linesToFeatures(get('features_lines')) : null,
-        tags: get('tags_csv') ? get('tags_csv').split(',').map(s=>s.trim()).filter(Boolean) : [],
-        link_url: get('link_url') || null
-      };
-      const { error } = await supabase.from('projects').update(payload).eq('id', card.dataset.id);
-      toast(error ? 'Error: ' + error.message : 'Saved');
-    }));
     container.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async (e) => {
       const card = e.target.closest('.card');
       if (!confirm('Delete this project?')) return;
@@ -632,6 +625,28 @@
       if (!error){ card.remove(); toast('Deleted'); } else toast('Error: ' + error.message);
     }));
   }
+
+  document.getElementById('save-projects-btn').addEventListener('click', async () => {
+    const container = document.getElementById('projects-list');
+    const note = document.getElementById('projects-note');
+    const cards = container.querySelectorAll('.card[data-id]');
+    const rows = Array.from(cards).map(card => {
+      const get = (f) => card.querySelector(`[data-field="${f}"]`).value;
+      return {
+        id: Number(card.dataset.id),
+        title: get('title'), who: get('who'), status: get('status'), layout: get('layout'),
+        description: get('description'),
+        nodes: get('nodes_csv') ? csvToNodes(get('nodes_csv')) : null,
+        features: get('features_lines') ? linesToFeatures(get('features_lines')) : null,
+        tags: get('tags_csv') ? get('tags_csv').split(',').map(s=>s.trim()).filter(Boolean) : [],
+        link_url: get('link_url') || null
+      };
+    });
+    if (!rows.length){ note.textContent = 'Nothing to save.'; return; }
+    const { error } = await supabase.from('projects').upsert(rows);
+    note.textContent = error ? 'Error: ' + error.message : 'Saved.';
+    if (!error) toast('Saved');
+  });
 
   document.getElementById('add-project-btn').addEventListener('click', async () => {
     const title = document.getElementById('new-project-title').value.trim();
