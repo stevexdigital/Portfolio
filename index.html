@@ -332,6 +332,7 @@
       <span class="eyebrow"><span class="dot"></span>Let's talk</span>
       <h2>Book a call</h2>
       <p id="booking-sub">Tell me a bit about what you need and a good time to reach you — I'll follow up by email.</p>
+      <p class="mono" id="availability-schedule" style="color:var(--text-faint); font-size:0.82rem;"></p>
     </div>
     <div id="booking-calendar-embed" style="display:none;"></div>
     <form class="booking-box" id="booking-form">
@@ -417,6 +418,33 @@
   function initials(name){
     if (!name) return '?';
     return name.trim().split(/\s+/).slice(0,2).map(w => w[0]?.toUpperCase() || '').join('');
+  }
+
+  function formatTime12(t){
+    const [h, m] = t.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    let h12 = h % 12; if (h12 === 0) h12 = 12;
+    return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+  }
+  function formatAvailability(hours){
+    const DAY_ABBR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const order = [1,2,3,4,5,6,0];
+    const byDay = Object.fromEntries((hours||[]).map(h => [h.day_of_week, h]));
+    const ordered = order.map(d => ({ day: d, ...byDay[d] }));
+    const groups = [];
+    let current = null;
+    for (const row of ordered){
+      if (!row.enabled){ current = null; continue; }
+      const key = row.start_time + '-' + row.end_time;
+      if (current && current.key === key){ current.days.push(row.day); }
+      else { current = { key, days: [row.day], start: row.start_time, end: row.end_time }; groups.push(current); }
+    }
+    if (!groups.length) return '';
+    return groups.map(g => {
+      const first = DAY_ABBR[g.days[0]], last = DAY_ABBR[g.days[g.days.length - 1]];
+      const dayLabel = g.days.length > 1 ? `${first}–${last}` : first;
+      return `${dayLabel} ${formatTime12(g.start)}–${formatTime12(g.end)} CST`;
+    }).join(' · ');
   }
 
   // ---------- THEME TOGGLE ----------
@@ -532,13 +560,14 @@
 
   async function loadSite(){
     try{
-      const [{ data: content }, { data: badges }, { data: solutions }, { data: projects }, { data: stack }, { data: stats }] = await Promise.all([
+      const [{ data: content }, { data: badges }, { data: solutions }, { data: projects }, { data: stack }, { data: stats }, { data: hours }] = await Promise.all([
         supabase.from('site_content').select('key,value'),
         supabase.from('hero_badges').select('label').order('sort_order'),
         supabase.from('solutions').select('*').order('sort_order'),
         supabase.from('projects').select('*').order('sort_order'),
         supabase.from('stack_items').select('label,logo_url').order('sort_order'),
-        supabase.from('about_stats').select('*').order('sort_order')
+        supabase.from('about_stats').select('*').order('sort_order'),
+        supabase.from('availability_hours').select('*').order('day_of_week')
       ]);
 
       const c = Object.fromEntries((content || []).map(r => [r.key, r.value]));
@@ -567,6 +596,7 @@
       document.getElementById('contact-whatsapp').href = waLink;
       document.getElementById('footer-name').textContent = c.footer_name ? `Built by ${c.footer_name}.` : '';
       document.getElementById('footer-location').textContent = c.footer_location || '';
+      document.getElementById('availability-schedule').textContent = formatAvailability(hours);
 
       // Booking: show live Google Calendar embed if a link is set, otherwise keep the plain form
       if (c.booking_calendar_url){

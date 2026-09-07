@@ -58,6 +58,13 @@ create table if not exists public.bookings (
   message text
 );
 
+create table if not exists public.availability_hours (
+  day_of_week int primary key check (day_of_week between 0 and 6), -- 0=Sunday ... 6=Saturday
+  enabled boolean not null default false,
+  start_time text not null default '09:00',
+  end_time text not null default '17:00'
+);
+
 -- ---------- Security: public can read everything, only logged-in you can write ----------
 alter table public.site_content enable row level security;
 alter table public.hero_badges enable row level security;
@@ -93,6 +100,26 @@ create policy "Only owner can read bookings" on public.bookings
 drop policy if exists "Only owner can delete bookings" on public.bookings;
 create policy "Only owner can delete bookings" on public.bookings
   for delete using (auth.role() = 'authenticated');
+
+-- ---------- Availability hours: public read, only you can edit ----------
+alter table public.availability_hours enable row level security;
+
+drop policy if exists "Public read access" on public.availability_hours;
+create policy "Public read access" on public.availability_hours for select using (true);
+
+drop policy if exists "Authenticated write" on public.availability_hours;
+create policy "Authenticated write" on public.availability_hours for all
+  using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+
+insert into public.availability_hours (day_of_week, enabled, start_time, end_time) values
+  (0, false, '09:00', '17:00'),
+  (1, true,  '09:00', '17:00'),
+  (2, true,  '09:00', '17:00'),
+  (3, true,  '09:00', '17:00'),
+  (4, true,  '09:00', '17:00'),
+  (5, true,  '09:00', '17:00'),
+  (6, false, '09:00', '17:00')
+on conflict (day_of_week) do nothing;
 
 -- ---------- Storage: a public bucket for your hero photo, only you can upload ----------
 insert into storage.buckets (id, name, public)

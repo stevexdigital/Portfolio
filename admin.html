@@ -145,6 +145,7 @@
       <button data-panel="panel-projects">Projects</button>
       <button data-panel="panel-stack">Stack</button>
       <button data-panel="panel-stats">About stats</button>
+      <button data-panel="panel-availability">Availability</button>
       <button data-panel="panel-bookings">Bookings</button>
       <button data-panel="panel-photo">Photos</button>
     </nav>
@@ -244,6 +245,16 @@
         <label>Label</label><input id="new-stat-label">
         <label>Value</label><input id="new-stat-value">
         <button class="primary" style="margin-top:12px;" id="add-stat-btn">Add stat</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-availability">
+      <h2>Availability</h2>
+      <p class="hint">Your bookable hours, in CST. This is what the AI assistant and the calendar check use — no need to touch Google Calendar settings or code to change it.</p>
+      <div id="availability-list"></div>
+      <div class="row" style="margin-top:14px;">
+        <button class="primary" id="save-availability-btn">Save all</button>
+        <span class="save-note" id="availability-note"></span>
       </div>
     </section>
 
@@ -773,6 +784,40 @@
   });
 
   // ---------- LOAD EVERYTHING ----------
+  // ---------- AVAILABILITY ----------
+  const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  async function loadAvailability(){
+    const { data, error } = await supabase.from('availability_hours').select('*').order('day_of_week');
+    const container = document.getElementById('availability-list');
+    if (error){ container.innerHTML = `<p class="hint">Error: ${esc(error.message)}</p>`; return; }
+    container.innerHTML = (data||[]).map(row => `
+      <div class="card" data-id="${row.day_of_week}">
+        <div class="row" style="align-items:center;">
+          <label style="margin:0; width:110px; flex-shrink:0;">
+            <input type="checkbox" data-field="enabled" ${row.enabled ? 'checked' : ''} style="width:auto; margin-right:8px;">${DAY_NAMES[row.day_of_week]}
+          </label>
+          <input type="time" data-field="start_time" value="${esc(row.start_time)}" style="width:auto;">
+          <span>to</span>
+          <input type="time" data-field="end_time" value="${esc(row.end_time)}" style="width:auto;">
+        </div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('save-availability-btn').addEventListener('click', async () => {
+    const container = document.getElementById('availability-list');
+    const note = document.getElementById('availability-note');
+    const cards = container.querySelectorAll('.card[data-id]');
+    const rows = Array.from(cards).map(card => ({
+      day_of_week: Number(card.dataset.id),
+      enabled: card.querySelector('[data-field="enabled"]').checked,
+      start_time: card.querySelector('[data-field="start_time"]').value,
+      end_time: card.querySelector('[data-field="end_time"]').value
+    }));
+    const { error } = await supabase.from('availability_hours').upsert(rows, { onConflict: 'day_of_week' });
+    note.textContent = error ? 'Error: ' + error.message : 'Saved.';
+    if (!error) toast('Saved');
+  });
+
   // ---------- BOOKINGS ----------
   async function loadBookings(){
     const { data, error } = await supabase.from('bookings').select('*').order('created_at', { ascending: false });
@@ -804,7 +849,7 @@
 
   async function loadAll(){
     await Promise.all([
-      loadSiteContent(), heroBadges.load(), loadSolutions(), loadProjects(), loadStackItems(), loadStats(), loadBookings()
+      loadSiteContent(), heroBadges.load(), loadSolutions(), loadProjects(), loadStackItems(), loadStats(), loadBookings(), loadAvailability()
     ]);
     const { data: heroData } = await supabase.from('site_content').select('value').eq('key','hero_photo_url').maybeSingle();
     if (heroData?.value){
