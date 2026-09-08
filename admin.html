@@ -85,6 +85,19 @@
   .hint{ font-size:0.85rem; color:var(--text-dim); margin-top:4px; margin-bottom:20px; }
   img.preview{ max-width:160px; border-radius:var(--radius); border:1px solid var(--line); margin-top:10px; display:block; }
 
+  /* ---------- BOOKINGS CALENDAR ---------- */
+  .bk-cal-widget{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media (max-width:760px){ .bk-cal-widget{ grid-template-columns:1fr; } }
+  .cal-header-admin{ display:flex; align-items:center; justify-content:space-between; font-weight:600; margin-bottom:12px; }
+  .cal-nav-admin{ background:none; border:1px solid var(--line); border-radius:var(--radius); width:26px; height:26px; cursor:pointer; color:var(--text); }
+  .cal-grid-admin{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+  .cal-daylabel-admin{ font-size:0.68rem; color:var(--text-dim); text-align:center; padding-bottom:4px; }
+  .cal-day-admin{ aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:0.8rem; border-radius:var(--radius); background:transparent; border:1px solid transparent; color:var(--text-dim); cursor:pointer; position:relative; }
+  .cal-day-admin:hover{ border-color:var(--line); }
+  .cal-day-admin.has-bookings::after{ content:''; position:absolute; bottom:4px; width:4px; height:4px; border-radius:50%; background:var(--accent); }
+  .cal-day-admin.selected{ background:var(--accent); color:#221304; }
+  .bk-day-card{ margin-bottom:10px; }
+
   #theme-toggle{
     position:fixed; top:16px; right:16px; z-index:50;
     width:38px; height:38px; padding:0; border-radius:50%;
@@ -260,8 +273,32 @@
 
     <section class="panel" id="panel-bookings">
       <h2>Bookings</h2>
-      <p class="hint">Submissions from your site's "Book a call" form. Newest first.</p>
-      <div id="bookings-list"></div>
+      <p class="hint">Click a date to see, edit, add, or remove appointments for that day.</p>
+      <div class="bk-cal-widget">
+        <div class="card">
+          <div class="cal-header-admin">
+            <button type="button" class="cal-nav-admin" id="bk-cal-prev">&larr;</button>
+            <span id="bk-cal-month-label"></span>
+            <button type="button" class="cal-nav-admin" id="bk-cal-next">&rarr;</button>
+          </div>
+          <div class="cal-grid-admin" id="bk-cal-grid"></div>
+        </div>
+        <div class="card">
+          <h3 id="bk-day-heading" style="margin-bottom:14px;">Select a date</h3>
+          <div id="bk-day-list"></div>
+          <div class="row" style="margin-top:10px;">
+            <button class="primary" id="save-bookings-btn">Save all</button>
+            <span class="save-note" id="bookings-note"></span>
+          </div>
+          <div class="add-form">
+            <label>Name</label><input id="new-booking-name">
+            <label>Email</label><input id="new-booking-email">
+            <label>Time (e.g. 2:00 PM)</label><input id="new-booking-time">
+            <label>Notes</label><textarea id="new-booking-notes"></textarea>
+            <button class="primary" style="margin-top:12px;" id="add-booking-btn">Add booking for this date</button>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="panel" id="panel-photo">
@@ -394,7 +431,9 @@
     ['about_heading','About: heading'],['about_bio','About: bio', true],
     ['cta_primary_label','Primary button label'],['cta_secondary_label','Secondary button label'],
     ['contact_heading','Contact heading'],['contact_email','Contact email'],['contact_linkedin_url','LinkedIn URL'],
-    ['booking_calendar_url','Google Calendar booking link (leave blank to use the plain form)'],
+    ['booking_calendar_url','Google Calendar booking link (fallback if the native calendar below isn\'t set up)'],
+    ['n8n_availability_webhook_url','n8n webhook URL: check availability (powers the native booking calendar)'],
+    ['n8n_booking_webhook_url','n8n webhook URL: create booking (powers the native booking calendar)'],
     ['whatsapp_number','WhatsApp number (with country code, e.g. +639...)'],
     ['footer_name','Footer name'],['footer_location','Footer location']
   ];
@@ -818,34 +857,112 @@
     if (!error) toast('Saved');
   });
 
-  // ---------- BOOKINGS ----------
+  // ---------- BOOKINGS (calendar view) ----------
+  let bkBookingsByDate = {}; // { 'YYYY-MM-DD': [booking, ...] }
+  let bkViewMonth = new Date(); bkViewMonth.setDate(1);
+  let bkSelectedDate = null;
+
+  function ymd(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
   async function loadBookings(){
-    const { data, error } = await supabase.from('bookings').select('*').order('created_at', { ascending: false });
-    const container = document.getElementById('bookings-list');
-    if (error){ container.innerHTML = `<p class="hint">Error loading bookings: ${esc(error.message)}</p>`; return; }
-    container.innerHTML = (data||[]).map(b => `
-      <div class="card" data-id="${b.id}">
-        <div class="card-top">
-          <div>
-            <strong>${esc(b.name)}</strong> — <span>${esc(b.email)}</span>
-            <div class="hint" style="margin:4px 0 0;">
-              ${b.preferred_date ? esc(b.preferred_date) : 'No date given'}${b.preferred_time ? ' at ' + esc(b.preferred_time) : ''}
-              &middot; submitted ${new Date(b.created_at).toLocaleString()}
-            </div>
-          </div>
+    const { data, error } = await supabase.from('bookings').select('*').order('preferred_date');
+    if (error){ toast('Error loading bookings: ' + error.message); return; }
+    bkBookingsByDate = {};
+    (data||[]).forEach(b => {
+      const key = b.preferred_date || 'unscheduled';
+      if (!bkBookingsByDate[key]) bkBookingsByDate[key] = [];
+      bkBookingsByDate[key].push(b);
+    });
+    renderBkCalendar();
+    if (bkSelectedDate) renderBkDay(bkSelectedDate);
+  }
+
+  function renderBkCalendar(){
+    const year = bkViewMonth.getFullYear(), month = bkViewMonth.getMonth();
+    document.getElementById('bk-cal-month-label').textContent = bkViewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const firstDay = new Date(year, month, 1);
+    const startOffset = firstDay.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    let html = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="cal-daylabel-admin">${d}</div>`).join('');
+    for (let i = 0; i < startOffset; i++) html += '<div class="cal-day-admin"></div>';
+    for (let day = 1; day <= daysInMonth; day++){
+      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const hasBookings = !!bkBookingsByDate[dateStr]?.length;
+      const isSelected = dateStr === bkSelectedDate;
+      html += `<button type="button" class="cal-day-admin ${hasBookings ? 'has-bookings' : ''} ${isSelected ? 'selected' : ''}" data-date="${dateStr}">${day}</button>`;
+    }
+    document.getElementById('bk-cal-grid').innerHTML = html;
+    document.querySelectorAll('#bk-cal-grid .cal-day-admin[data-date]').forEach(btn => {
+      btn.addEventListener('click', () => { bkSelectedDate = btn.dataset.date; renderBkCalendar(); renderBkDay(btn.dataset.date); });
+    });
+  }
+
+  function renderBkDay(dateStr){
+    const bookings = bkBookingsByDate[dateStr] || [];
+    document.getElementById('bk-day-heading').textContent = dateStr;
+    const container = document.getElementById('bk-day-list');
+    container.innerHTML = bookings.map(b => `
+      <div class="card bk-day-card" data-id="${b.id}">
+        <div class="field-grid">
+          <div><label>Name</label><input data-field="name" value="${esc(b.name)}"></div>
+          <div><label>Email</label><input data-field="email" value="${esc(b.email)}"></div>
+        </div>
+        <div class="field-grid">
+          <div><label>Time</label><input data-field="preferred_time" value="${esc(b.preferred_time)}"></div>
+          <div><label>Date</label><input data-field="preferred_date" type="date" value="${esc(b.preferred_date)}"></div>
+        </div>
+        <label>Notes</label><textarea data-field="message">${esc(b.message)}</textarea>
+        <div class="row" style="margin-top:10px;">
           <button class="danger" data-delete>Delete</button>
         </div>
-        ${b.message ? `<p style="margin-top:10px; font-size:0.9rem;">${esc(b.message)}</p>` : ''}
       </div>
-    `).join('') || `<p class="hint">No bookings yet.</p>`;
+    `).join('') || `<p class="hint">No bookings this day.</p>`;
 
     container.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async (e) => {
       const card = e.target.closest('.card');
       if (!confirm('Delete this booking?')) return;
-      const { error: delErr } = await supabase.from('bookings').delete().eq('id', card.dataset.id);
-      if (!delErr){ card.remove(); toast('Deleted'); } else toast('Error: ' + delErr.message);
+      const { error } = await supabase.from('bookings').delete().eq('id', card.dataset.id);
+      if (!error){ toast('Deleted'); loadBookings(); } else toast('Error: ' + error.message);
     }));
   }
+
+  document.getElementById('bk-cal-prev').addEventListener('click', () => { bkViewMonth.setMonth(bkViewMonth.getMonth()-1); renderBkCalendar(); });
+  document.getElementById('bk-cal-next').addEventListener('click', () => { bkViewMonth.setMonth(bkViewMonth.getMonth()+1); renderBkCalendar(); });
+
+  document.getElementById('save-bookings-btn').addEventListener('click', async () => {
+    const note = document.getElementById('bookings-note');
+    const cards = document.querySelectorAll('#bk-day-list .card[data-id]');
+    if (!cards.length){ note.textContent = 'Nothing to save.'; return; }
+    const rows = Array.from(cards).map(card => ({
+      id: Number(card.dataset.id),
+      name: card.querySelector('[data-field="name"]').value,
+      email: card.querySelector('[data-field="email"]').value,
+      preferred_time: card.querySelector('[data-field="preferred_time"]').value,
+      preferred_date: card.querySelector('[data-field="preferred_date"]').value,
+      message: card.querySelector('[data-field="message"]').value
+    }));
+    const { error } = await supabase.from('bookings').upsert(rows);
+    note.textContent = error ? 'Error: ' + error.message : 'Saved.';
+    if (!error){ toast('Saved'); loadBookings(); }
+  });
+
+  document.getElementById('add-booking-btn').addEventListener('click', async () => {
+    if (!bkSelectedDate){ toast('Pick a date on the calendar first'); return; }
+    const name = document.getElementById('new-booking-name').value.trim();
+    const email = document.getElementById('new-booking-email').value.trim();
+    const time = document.getElementById('new-booking-time').value.trim();
+    const notes = document.getElementById('new-booking-notes').value.trim();
+    if (!name || !email){ toast('Name and email required'); return; }
+    const { error } = await supabase.from('bookings').insert({
+      name, email, preferred_date: bkSelectedDate, preferred_time: time, message: notes || null
+    });
+    if (!error){
+      ['name','email','time','notes'].forEach(f => document.getElementById('new-booking-'+f).value = '');
+      loadBookings();
+      toast('Added');
+    } else toast('Error: ' + error.message);
+  });
 
   async function loadAll(){
     await Promise.all([

@@ -199,6 +199,23 @@
   :root.dark .booking-note.ok{ color:#8FE0A8; }
   .booking-note.err{ color:var(--accent); }
 
+  /* ---------- NATIVE CALENDAR (Calendly-style) ---------- */
+  .cal-widget{ display:grid; grid-template-columns: 1fr 1fr; gap:24px; background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); padding:28px; max-width:760px; }
+  @media (max-width:700px){ .cal-widget{ grid-template-columns:1fr; } }
+  .cal-header{ display:flex; align-items:center; justify-content:space-between; font-weight:600; margin-bottom:14px; }
+  .cal-nav{ background:none; border:1px solid var(--line); border-radius:var(--radius); width:28px; height:28px; cursor:pointer; color:var(--text); }
+  .cal-nav:disabled{ opacity:0.3; cursor:not-allowed; }
+  .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .cal-daylabel{ font-size:0.7rem; color:var(--text-faint); text-align:center; padding-bottom:6px; }
+  .cal-day{ aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:0.85rem; border-radius:var(--radius); background:transparent; border:1px solid transparent; color:var(--text-faint); cursor:default; }
+  .cal-day.has-slots{ background:var(--bg-panel-2); color:var(--text); border-color:var(--line); cursor:pointer; font-weight:500; }
+  .cal-day.has-slots:hover{ border-color:var(--accent); }
+  .cal-day.selected{ background:var(--accent); color:#12233A; }
+  .cal-slots{ display:flex; flex-wrap:wrap; gap:8px; }
+  .cal-slot-btn{ padding:8px 14px; border-radius:var(--radius); border:1px solid var(--line); background:var(--bg-panel-2); color:var(--text); font-size:0.85rem; cursor:pointer; font-family:'IBM Plex Mono',monospace; }
+  .cal-slot-btn:hover{ border-color:var(--accent); }
+  .cal-slot-btn.selected{ background:var(--accent); color:#12233A; border-color:var(--accent); }
+
   /* ---------- CONTACT ---------- */
   .contact-box{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:24px; padding:44px; background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); }
   .contact-box h2{ font-size:1.5rem; max-width:20ch; }
@@ -334,7 +351,35 @@
       <p id="booking-sub">Tell me a bit about what you need and a good time to reach you — I'll follow up by email.</p>
       <p class="mono" id="availability-schedule" style="color:var(--text-faint); font-size:0.82rem;"></p>
     </div>
+
+    <div id="native-calendar" style="display:none;">
+      <div class="cal-widget">
+        <div class="cal-panel">
+          <div class="cal-header">
+            <button type="button" class="cal-nav" id="cal-prev" aria-label="Previous month">&larr;</button>
+            <span id="cal-month-label"></span>
+            <button type="button" class="cal-nav" id="cal-next" aria-label="Next month">&rarr;</button>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+        <div class="cal-panel">
+          <div id="cal-slots-heading" class="hint" style="margin-bottom:12px;">Pick a date to see open times</div>
+          <div class="cal-slots" id="cal-slots"></div>
+          <form id="cal-book-form" style="display:none; margin-top:20px;">
+            <div class="field"><label for="cal-name">Name</label><input id="cal-name" required></div>
+            <div class="field"><label for="cal-email">Email</label><input id="cal-email" type="email" required></div>
+            <div class="field"><label for="cal-notes">What's this call about? (optional)</label><textarea id="cal-notes"></textarea></div>
+            <div class="field">
+              <button class="btn btn-primary" type="submit" id="cal-confirm-btn">Confirm booking</button>
+              <span class="booking-note" id="cal-note"></span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <div id="booking-calendar-embed" style="display:none;"></div>
+
     <form class="booking-box" id="booking-form">
       <div class="booking-row">
         <div class="field">
@@ -598,8 +643,13 @@
       document.getElementById('footer-location').textContent = c.footer_location || '';
       document.getElementById('availability-schedule').textContent = formatAvailability(hours);
 
-      // Booking: show live Google Calendar embed if a link is set, otherwise keep the plain form
-      if (c.booking_calendar_url){
+      // Booking: native calendar > Google Calendar link > plain form (first one available wins)
+      if (c.n8n_availability_webhook_url && c.n8n_booking_webhook_url){
+        document.getElementById('native-calendar').style.display = 'block';
+        document.getElementById('booking-form').style.display = 'none';
+        document.getElementById('booking-sub').textContent = "Pick a time that works for you — it's synced to my real availability.";
+        initNativeCalendar(c.n8n_availability_webhook_url, c.n8n_booking_webhook_url);
+      } else if (c.booking_calendar_url){
         document.getElementById('booking-calendar-embed').innerHTML = `
           <svg class="cal-icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
           <h3>Pick a time that works for you</h3>
@@ -642,6 +692,127 @@
       document.getElementById('projects-container').innerHTML =
         `<p class="error-note">Couldn't load content from Supabase. Check that SUPABASE_URL and SUPABASE_ANON_KEY are correct, and that schema.sql has been run.</p>`;
     }
+  }
+
+  // ---------- NATIVE BOOKING CALENDAR (Calendly-style) ----------
+  function initNativeCalendar(availabilityUrl, bookingUrl){
+    let slotsByDate = {}; // { 'YYYY-MM-DD': [{time, iso}, ...] }
+    let viewMonth = new Date(); viewMonth.setDate(1);
+    let selectedDate = null;
+    let selectedTime = null;
+
+    const grid = document.getElementById('cal-grid');
+    const monthLabel = document.getElementById('cal-month-label');
+    const slotsContainer = document.getElementById('cal-slots');
+    const slotsHeading = document.getElementById('cal-slots-heading');
+    const bookForm = document.getElementById('cal-book-form');
+
+    function renderMonth(){
+      const year = viewMonth.getFullYear(), month = viewMonth.getMonth();
+      monthLabel.textContent = viewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      const firstDay = new Date(year, month, 1);
+      const startOffset = firstDay.getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      let html = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="cal-daylabel">${d}</div>`).join('');
+      for (let i = 0; i < startOffset; i++) html += '<div class="cal-day"></div>';
+      for (let day = 1; day <= daysInMonth; day++){
+        const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const hasSlots = !!slotsByDate[dateStr]?.length;
+        const isSelected = dateStr === selectedDate;
+        html += `<button type="button" class="cal-day ${hasSlots ? 'has-slots' : ''} ${isSelected ? 'selected' : ''}" data-date="${dateStr}" ${hasSlots ? '' : 'disabled'}>${day}</button>`;
+      }
+      grid.innerHTML = html;
+
+      grid.querySelectorAll('.cal-day.has-slots').forEach(btn => {
+        btn.addEventListener('click', () => selectDate(btn.dataset.date));
+      });
+
+      document.getElementById('cal-prev').disabled = false;
+      document.getElementById('cal-next').disabled = false;
+    }
+
+    function selectDate(dateStr){
+      selectedDate = dateStr;
+      selectedTime = null;
+      bookForm.style.display = 'none';
+      renderMonth();
+      const daySlots = slotsByDate[dateStr] || [];
+      slotsHeading.textContent = daySlots.length ? `Open times — ${daySlots[0].dateLabel}` : 'No open times that day';
+      slotsContainer.innerHTML = daySlots.map(s => `<button type="button" class="cal-slot-btn" data-iso="${s.iso}" data-time="${esc(s.time)}">${esc(s.time)}</button>`).join('');
+      slotsContainer.querySelectorAll('.cal-slot-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          slotsContainer.querySelectorAll('.cal-slot-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedTime = btn.dataset.time;
+          bookForm.style.display = 'block';
+        });
+      });
+    }
+
+    document.getElementById('cal-prev').addEventListener('click', () => {
+      viewMonth.setMonth(viewMonth.getMonth() - 1);
+      renderMonth();
+    });
+    document.getElementById('cal-next').addEventListener('click', () => {
+      viewMonth.setMonth(viewMonth.getMonth() + 1);
+      renderMonth();
+    });
+
+    bookForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const note = document.getElementById('cal-note');
+      const btn = document.getElementById('cal-confirm-btn');
+      const name = document.getElementById('cal-name').value.trim();
+      const email = document.getElementById('cal-email').value.trim();
+      const notes = document.getElementById('cal-notes').value.trim();
+      if (!name || !email || !selectedDate || !selectedTime){
+        note.textContent = 'Please fill in your name and email.';
+        note.className = 'booking-note err';
+        return;
+      }
+      btn.disabled = true;
+      note.textContent = 'Booking…';
+      note.className = 'booking-note';
+      try {
+        const res = await fetch(bookingUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, date: selectedDate, time: selectedTime, notes })
+        });
+        const result = await res.json().catch(() => ({ success: false }));
+        if (result.success){
+          note.textContent = "You're booked — check your email for the confirmation.";
+          note.className = 'booking-note ok';
+          bookForm.reset();
+          bookForm.style.display = 'none';
+          selectedTime = null;
+          selectDate(selectedDate); // refresh slots so the just-booked time can be visually cleared on next load
+        } else {
+          note.textContent = "Something went wrong — try another slot or email directly below.";
+          note.className = 'booking-note err';
+        }
+      } catch(err){
+        note.textContent = "Something went wrong — try again or email directly below.";
+        note.className = 'booking-note err';
+      }
+      btn.disabled = false;
+    });
+
+    // Fetch real availability, then render
+    fetch(availabilityUrl)
+      .then(r => r.json())
+      .then(data => {
+        slotsByDate = {};
+        (data.slotsDetailed || []).forEach(s => {
+          if (!slotsByDate[s.date]) slotsByDate[s.date] = [];
+          slotsByDate[s.date].push(s);
+        });
+        renderMonth();
+      })
+      .catch(() => {
+        slotsHeading.textContent = "Couldn't load availability — try the plain form instead.";
+      });
   }
 
   loadSite();
