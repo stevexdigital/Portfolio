@@ -643,22 +643,15 @@
       document.getElementById('footer-location').textContent = c.footer_location || '';
       document.getElementById('availability-schedule').textContent = formatAvailability(hours);
 
-      // Booking: native calendar > Google Calendar link > plain form (first one available wins)
+      // Booking: native calendar is now the default (Supabase-only mode works with zero extra setup).
+      // If both n8n webhook URLs are set, it automatically upgrades to real Google Calendar sync + email confirmation.
+      document.getElementById('native-calendar').style.display = 'block';
+      document.getElementById('booking-form').style.display = 'none';
+      document.getElementById('booking-sub').textContent = "Pick a time that works for you.";
       if (c.n8n_availability_webhook_url && c.n8n_booking_webhook_url){
-        document.getElementById('native-calendar').style.display = 'block';
-        document.getElementById('booking-form').style.display = 'none';
-        document.getElementById('booking-sub').textContent = "Pick a time that works for you — it's synced to my real availability.";
-        initNativeCalendar(c.n8n_availability_webhook_url, c.n8n_booking_webhook_url);
-      } else if (c.booking_calendar_url){
-        document.getElementById('booking-calendar-embed').innerHTML = `
-          <svg class="cal-icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
-          <h3>Pick a time that works for you</h3>
-          <p>Synced to my real availability — no back-and-forth needed.</p>
-          <a class="btn btn-primary" href="${esc(c.booking_calendar_url)}" target="_blank" rel="noopener">Open my calendar & book a time</a>
-        `;
-        document.getElementById('booking-calendar-embed').style.display = 'block';
-        document.getElementById('booking-form').style.display = 'none';
-        document.getElementById('booking-sub').textContent = "Pick a time that works for you — it's synced to my real availability.";
+        initNativeCalendar('n8n', { availabilityUrl: c.n8n_availability_webhook_url, bookingUrl: c.n8n_booking_webhook_url });
+      } else {
+        initNativeCalendar('supabase', {});
       }
 
       const initialsText = initials(c.hero_name);
@@ -695,8 +688,10 @@
   }
 
   // ---------- NATIVE BOOKING CALENDAR (Calendly-style) ----------
-  function initNativeCalendar(availabilityUrl, bookingUrl){
-    let slotsByDate = {}; // { 'YYYY-MM-DD': [{time, iso}, ...] }
+  // mode: 'supabase' (default, no extra setup — reads availability_hours + bookings directly)
+  //    or 'n8n' (real Google Calendar sync + email confirmation, once webhook URLs are set)
+  function initNativeCalendar(mode, opts){
+    let slotsByDate = {}; // { 'YYYY-MM-DD': [{time, iso, dateLabel}, ...] }
     let viewMonth = new Date(); viewMonth.setDate(1);
     let selectedDate = null;
     let selectedTime = null;
@@ -727,9 +722,6 @@
       grid.querySelectorAll('.cal-day.has-slots').forEach(btn => {
         btn.addEventListener('click', () => selectDate(btn.dataset.date));
       });
-
-      document.getElementById('cal-prev').disabled = false;
-      document.getElementById('cal-next').disabled = false;
     }
 
     function selectDate(dateStr){
@@ -739,7 +731,7 @@
       renderMonth();
       const daySlots = slotsByDate[dateStr] || [];
       slotsHeading.textContent = daySlots.length ? `Open times — ${daySlots[0].dateLabel}` : 'No open times that day';
-      slotsContainer.innerHTML = daySlots.map(s => `<button type="button" class="cal-slot-btn" data-iso="${s.iso}" data-time="${esc(s.time)}">${esc(s.time)}</button>`).join('');
+      slotsContainer.innerHTML = daySlots.map(s => `<button type="button" class="cal-slot-btn" data-time="${esc(s.time)}">${esc(s.time)}</button>`).join('');
       slotsContainer.querySelectorAll('.cal-slot-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           slotsContainer.querySelectorAll('.cal-slot-btn').forEach(b => b.classList.remove('selected'));
@@ -775,19 +767,35 @@
       note.textContent = 'Booking…';
       note.className = 'booking-note';
       try {
-        const res = await fetch(bookingUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, date: selectedDate, time: selectedTime, notes })
-        });
-        const result = await res.json().catch(() => ({ success: false }));
-        if (result.success){
-          note.textContent = "You're booked — check your email for the confirmation.";
+        let success = false;
+        if (mode === 'n8n'){
+          const res = await fetch(opts.bookingUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, date: selectedDate, time: selectedTime, notes })
+          });
+          const result = await res.json().catch(() => ({ success: false }));
+          success = !!result.success;
+        } else {
+          const { error } = await supabase.from('bookings').insert({
+            name, email, preferred_date: selectedDate, preferred_time: selectedTime, message: notes || null
+          });
+          success = !error;
+        }
+
+        if (success){
+          note.textContent = mode === 'n8n'
+            ? "You're booked — check your email for the confirmation."
+            : "Booked! I'll follow up by email to confirm.";
           note.className = 'booking-note ok';
           bookForm.reset();
           bookForm.style.display = 'none';
           selectedTime = null;
-          selectDate(selectedDate); // refresh slots so the just-booked time can be visually cleared on next load
+          // Remove the just-booked slot locally so it can't be double-booked before the next full refresh
+          if (slotsByDate[selectedDate]){
+            slotsByDate[selectedDate] = slotsByDate[selectedDate].filter(s => s.time !== selectedTime);
+          }
+          selectDate(selectedDate);
         } else {
           note.textContent = "Something went wrong — try another slot or email directly below.";
           note.className = 'booking-note err';
@@ -799,20 +807,58 @@
       btn.disabled = false;
     });
 
-    // Fetch real availability, then render
-    fetch(availabilityUrl)
-      .then(r => r.json())
-      .then(data => {
-        slotsByDate = {};
-        (data.slotsDetailed || []).forEach(s => {
-          if (!slotsByDate[s.date]) slotsByDate[s.date] = [];
-          slotsByDate[s.date].push(s);
-        });
-        renderMonth();
-      })
-      .catch(() => {
-        slotsHeading.textContent = "Couldn't load availability — try the plain form instead.";
+    // ---- Load slots: either from n8n (real Google Calendar sync) or computed directly from Supabase ----
+    async function loadSlotsFromN8n(){
+      const res = await fetch(opts.availabilityUrl);
+      const data = await res.json();
+      const map = {};
+      (data.slotsDetailed || []).forEach(s => {
+        if (!map[s.date]) map[s.date] = [];
+        map[s.date].push(s);
       });
+      return map;
+    }
+
+    async function loadSlotsFromSupabase(){
+      const [{ data: hoursRows }, { data: bookingRows }] = await Promise.all([
+        supabase.from('availability_hours').select('*'),
+        supabase.from('bookings').select('preferred_date,preferred_time')
+      ]);
+      const hoursByDay = Object.fromEntries((hoursRows||[]).map(r => [r.day_of_week, r]));
+      const takenKeys = new Set((bookingRows||[]).map(b => `${b.preferred_date}|${b.preferred_time}`));
+
+      const map = {};
+      const now = new Date();
+      const DAYS_AHEAD = 30;
+      for (let d = 0; d < DAYS_AHEAD; d++){
+        const day = new Date(now.getTime() + d * 86400000);
+        const dow = day.getDay();
+        const rule = hoursByDay[dow];
+        if (!rule || !rule.enabled) continue;
+
+        const dateStr = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+        const dateLabel = day.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        const [startH, startM] = rule.start_time.split(':').map(Number);
+        const [endH, endM] = rule.end_time.split(':').map(Number);
+
+        for (let mins = startH*60+startM; mins < endH*60+endM; mins += 60){
+          const h = Math.floor(mins/60), m = mins % 60;
+          const slotDate = new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, m);
+          if (slotDate < now) continue;
+          const ampm = h >= 12 ? 'PM' : 'AM';
+          let h12 = h % 12; if (h12 === 0) h12 = 12;
+          const timeLabel = `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+          if (takenKeys.has(`${dateStr}|${timeLabel}`)) continue;
+          if (!map[dateStr]) map[dateStr] = [];
+          map[dateStr].push({ date: dateStr, dateLabel, time: timeLabel });
+        }
+      }
+      return map;
+    }
+
+    (mode === 'n8n' ? loadSlotsFromN8n() : loadSlotsFromSupabase())
+      .then(map => { slotsByDate = map; renderMonth(); })
+      .catch(() => { slotsHeading.textContent = "Couldn't load availability — try again shortly."; });
   }
 
   loadSite();
