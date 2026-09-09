@@ -58,12 +58,53 @@ create table if not exists public.bookings (
   message text
 );
 
+create table if not exists public.contacts (
+  id serial primary key,
+  name text not null,
+  email text not null unique,
+  phone text,
+  status text not null default 'new', -- 'new', 'contacted', 'qualified', 'booked', 'closed'
+  notes text,
+  source text default 'booking',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.availability_hours (
   day_of_week int primary key check (day_of_week between 0 and 6), -- 0=Sunday ... 6=Saturday
   enabled boolean not null default false,
   start_time text not null default '09:00',
   end_time text not null default '17:00'
 );
+
+-- ---------- Contacts CRM: sensitive, no public access at all ----------
+alter table public.contacts enable row level security;
+
+drop policy if exists "Authenticated full access" on public.contacts;
+create policy "Authenticated full access" on public.contacts
+  for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+
+-- Auto-create/update a contact whenever a booking comes in, from any source
+create or replace function public.sync_contact_from_booking()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.contacts (name, email, source)
+  values (new.name, new.email, 'booking')
+  on conflict (email) do update
+    set name = excluded.name,
+        updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_sync_contact_from_booking on public.bookings;
+create trigger trg_sync_contact_from_booking
+after insert on public.bookings
+for each row execute function public.sync_contact_from_booking();
 
 -- ---------- Security: public can read everything, only logged-in you can write ----------
 alter table public.site_content enable row level security;

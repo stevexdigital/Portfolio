@@ -159,6 +159,7 @@
       <button data-panel="panel-stack">Stack</button>
       <button data-panel="panel-stats">About stats</button>
       <button data-panel="panel-availability">Availability</button>
+      <button data-panel="panel-contacts">Contacts</button>
       <button data-panel="panel-bookings">Bookings</button>
       <button data-panel="panel-integrations">Integrations</button>
       <button data-panel="panel-photo">Photos</button>
@@ -269,6 +270,22 @@
       <div class="row" style="margin-top:14px;">
         <button class="primary" id="save-availability-btn">Save all</button>
         <span class="save-note" id="availability-note"></span>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-contacts">
+      <h2>Contacts</h2>
+      <p class="hint">Every person who's booked a call, automatically added here — deduplicated by email, with their full booking history alongside. Track status and keep private notes on each lead.</p>
+      <div id="contacts-list"></div>
+      <div class="row" style="margin-top:14px;">
+        <button class="primary" id="save-contacts-btn">Save all</button>
+        <span class="save-note" id="contacts-note"></span>
+      </div>
+      <div class="add-form">
+        <label>Name</label><input id="new-contact-name">
+        <label>Email</label><input id="new-contact-email">
+        <label>Phone (optional)</label><input id="new-contact-phone">
+        <button class="primary" style="margin-top:12px;" id="add-contact-btn">Add contact manually</button>
       </div>
     </section>
 
@@ -960,6 +977,88 @@
     if (!error) toast('Saved');
   });
 
+  // ---------- CONTACTS (CRM) ----------
+  const STATUS_OPTIONS = ['new','contacted','qualified','booked','closed'];
+  async function loadContacts(){
+    const [{ data: contacts, error }, { data: bookingRows }] = await Promise.all([
+      supabase.from('contacts').select('*').order('updated_at', { ascending: false }),
+      supabase.from('bookings').select('email,preferred_date,preferred_time').order('preferred_date')
+    ]);
+    const container = document.getElementById('contacts-list');
+    if (error){ container.innerHTML = `<p class="hint">Error: ${esc(error.message)}</p>`; return; }
+
+    const historyByEmail = {};
+    (bookingRows||[]).forEach(b => {
+      if (!historyByEmail[b.email]) historyByEmail[b.email] = [];
+      historyByEmail[b.email].push(`${b.preferred_date || '?'} ${b.preferred_time || ''}`.trim());
+    });
+
+    container.innerHTML = (contacts||[]).map(c => {
+      const history = historyByEmail[c.email] || [];
+      return `
+      <div class="card" data-id="${c.id}">
+        <div class="field-grid">
+          <div><label>Name</label><input data-field="name" value="${esc(c.name)}"></div>
+          <div><label>Email</label><input data-field="email" value="${esc(c.email)}"></div>
+        </div>
+        <div class="field-grid">
+          <div><label>Phone</label><input data-field="phone" value="${esc(c.phone)}"></div>
+          <div><label>Status</label>
+            <select data-field="status">
+              ${STATUS_OPTIONS.map(s => `<option value="${s}" ${c.status===s?'selected':''}>${s}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <label>Notes</label><textarea data-field="notes">${esc(c.notes)}</textarea>
+        <p class="hint" style="margin-top:10px;">
+          ${history.length ? `${history.length} booking${history.length>1?'s':''}: ${history.map(esc).join(' · ')}` : 'No bookings yet — added manually'}
+          &middot; source: ${esc(c.source || 'unknown')}
+        </p>
+        <div class="row" style="margin-top:10px;">
+          <button class="danger" data-delete>Delete</button>
+        </div>
+      </div>`;
+    }).join('') || `<p class="hint">No contacts yet — they'll appear automatically once someone books.</p>`;
+
+    container.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async (e) => {
+      const card = e.target.closest('.card');
+      if (!confirm('Delete this contact? (Their past bookings stay on record — this just removes the CRM entry.)')) return;
+      const { error: delErr } = await supabase.from('contacts').delete().eq('id', card.dataset.id);
+      if (!delErr){ card.remove(); toast('Deleted'); } else toast('Error: ' + delErr.message);
+    }));
+  }
+
+  document.getElementById('save-contacts-btn').addEventListener('click', async () => {
+    const note = document.getElementById('contacts-note');
+    const cards = document.querySelectorAll('#contacts-list .card[data-id]');
+    if (!cards.length){ note.textContent = 'Nothing to save.'; return; }
+    const rows = Array.from(cards).map(card => ({
+      id: Number(card.dataset.id),
+      name: card.querySelector('[data-field="name"]').value,
+      email: card.querySelector('[data-field="email"]').value,
+      phone: card.querySelector('[data-field="phone"]').value || null,
+      status: card.querySelector('[data-field="status"]').value,
+      notes: card.querySelector('[data-field="notes"]').value || null,
+      updated_at: new Date().toISOString()
+    }));
+    const { error } = await supabase.from('contacts').upsert(rows);
+    note.textContent = error ? 'Error: ' + error.message : 'Saved.';
+    if (!error){ toast('Saved'); loadContacts(); }
+  });
+
+  document.getElementById('add-contact-btn').addEventListener('click', async () => {
+    const name = document.getElementById('new-contact-name').value.trim();
+    const email = document.getElementById('new-contact-email').value.trim();
+    const phone = document.getElementById('new-contact-phone').value.trim();
+    if (!name || !email){ toast('Name and email required'); return; }
+    const { error } = await supabase.from('contacts').insert({ name, email, phone: phone || null, source: 'manual' });
+    if (!error){
+      ['name','email','phone'].forEach(f => document.getElementById('new-contact-'+f).value = '');
+      loadContacts();
+      toast('Added');
+    } else toast('Error: ' + error.message);
+  });
+
   // ---------- BOOKINGS (calendar view) ----------
   let bkBookingsByDate = {}; // { 'YYYY-MM-DD': [booking, ...] }
   let bkViewMonth = new Date(); bkViewMonth.setDate(1);
@@ -1069,7 +1168,7 @@
 
   async function loadAll(){
     await Promise.all([
-      loadSiteContent(), heroBadges.load(), loadSolutions(), loadProjects(), loadStackItems(), loadStats(), loadBookings(), loadAvailability(), loadIntegrations()
+      loadSiteContent(), heroBadges.load(), loadSolutions(), loadProjects(), loadStackItems(), loadStats(), loadBookings(), loadAvailability(), loadIntegrations(), loadContacts()
     ]);
     const { data: heroData } = await supabase.from('site_content').select('value').eq('key','hero_photo_url').maybeSingle();
     if (heroData?.value){
