@@ -160,6 +160,7 @@
       <button data-panel="panel-stats">About stats</button>
       <button data-panel="panel-availability">Availability</button>
       <button data-panel="panel-bookings">Bookings</button>
+      <button data-panel="panel-integrations">Integrations</button>
       <button data-panel="panel-photo">Photos</button>
     </nav>
     <button id="logout-btn">Log out</button>
@@ -301,6 +302,53 @@
       </div>
     </section>
 
+    <section class="panel" id="panel-integrations">
+      <h2>Integrations</h2>
+      <p class="hint">Every webhook and external endpoint your site talks to, in one place. Click Test after saving to check a webhook actually responds.</p>
+
+      <h3 style="margin-top:28px; font-size:1.05rem;">Booking</h3>
+      <div class="card">
+        <label>n8n webhook: check availability</label>
+        <div class="row"><input id="int-avail-url" style="flex:1;"><button id="test-avail-url">Test</button></div>
+        <span class="save-note" id="int-avail-note"></span>
+        <label style="margin-top:16px;">n8n webhook: create booking</label>
+        <div class="row"><input id="int-book-url" style="flex:1;"><button id="test-book-url">Test</button></div>
+        <span class="save-note" id="int-book-note"></span>
+        <label style="margin-top:16px;">Google Calendar booking link (fallback, optional)</label>
+        <input id="int-gcal-url">
+        <p class="hint">Without the two webhooks above, your site's native calendar already works on its own using the Availability tab + Bookings table — these just upgrade it to real Google Calendar sync + email confirmations.</p>
+      </div>
+
+      <h3 style="margin-top:28px; font-size:1.05rem;">Chat assistant</h3>
+      <div class="card">
+        <label>Chat endpoint (Supabase Edge Function or webhook)</label>
+        <div class="row"><input id="int-chat-url" style="flex:1;"><button id="test-chat-url">Test</button></div>
+        <span class="save-note" id="int-chat-note"></span>
+      </div>
+
+      <h3 style="margin-top:28px; font-size:1.05rem;">Notifications</h3>
+      <div class="card">
+        <label>Webhook to ping when a new booking comes in (Slack, Discord, Zapier, n8n — anything that accepts a POST)</label>
+        <div class="row"><input id="int-notify-url" style="flex:1;"><button id="test-notify-url">Test</button></div>
+        <span class="save-note" id="int-notify-note"></span>
+      </div>
+
+      <h3 style="margin-top:28px; font-size:1.05rem;">Contact</h3>
+      <div class="card">
+        <label>Contact email</label>
+        <input id="int-contact-email">
+        <label style="margin-top:16px;">WhatsApp number (with country code, e.g. +639...)</label>
+        <input id="int-whatsapp">
+        <label style="margin-top:16px;">LinkedIn URL</label>
+        <input id="int-linkedin">
+      </div>
+
+      <div class="row" style="margin-top:20px;">
+        <button class="primary" id="save-integrations-btn">Save all</button>
+        <span class="save-note" id="integrations-note"></span>
+      </div>
+    </section>
+
     <section class="panel" id="panel-photo">
       <h2>Header logo</h2>
       <p class="hint">Shown in the top-left of the nav bar, replacing the text brand name. Wide/rectangular logos work well here — leave unset to keep using the text name.</p>
@@ -430,11 +478,7 @@
     ['hero_location','Hero: location line'],['hero_sub','Hero: subheading', true],
     ['about_heading','About: heading'],['about_bio','About: bio', true],
     ['cta_primary_label','Primary button label'],['cta_secondary_label','Secondary button label'],
-    ['contact_heading','Contact heading'],['contact_email','Contact email'],['contact_linkedin_url','LinkedIn URL'],
-    ['booking_calendar_url','Google Calendar booking link (fallback if the native calendar below isn\'t set up)'],
-    ['n8n_availability_webhook_url','n8n webhook URL: check availability (powers the native booking calendar)'],
-    ['n8n_booking_webhook_url','n8n webhook URL: create booking (powers the native booking calendar)'],
-    ['whatsapp_number','WhatsApp number (with country code, e.g. +639...)'],
+    ['contact_heading','Contact heading'],
     ['footer_name','Footer name'],['footer_location','Footer location']
   ];
 
@@ -456,6 +500,65 @@
     document.getElementById('site-content-note').textContent = error ? 'Error: ' + error.message : 'Saved.';
     if (!error) toast('Saved');
   });
+
+  // ---------- INTEGRATIONS ----------
+  const INTEGRATION_FIELD_MAP = {
+    'int-avail-url': 'n8n_availability_webhook_url',
+    'int-book-url': 'n8n_booking_webhook_url',
+    'int-gcal-url': 'booking_calendar_url',
+    'int-chat-url': 'chat_endpoint_url',
+    'int-notify-url': 'notification_webhook_url',
+    'int-contact-email': 'contact_email',
+    'int-whatsapp': 'whatsapp_number',
+    'int-linkedin': 'contact_linkedin_url'
+  };
+
+  async function loadIntegrations(){
+    const { data } = await supabase.from('site_content').select('key,value');
+    const map = Object.fromEntries((data||[]).map(r => [r.key, r.value]));
+    Object.entries(INTEGRATION_FIELD_MAP).forEach(([elId, key]) => {
+      const el = document.getElementById(elId);
+      if (el) el.value = map[key] || '';
+    });
+  }
+
+  document.getElementById('save-integrations-btn').addEventListener('click', async () => {
+    const note = document.getElementById('integrations-note');
+    const rows = Object.entries(INTEGRATION_FIELD_MAP).map(([elId, key]) => ({
+      key, value: document.getElementById(elId).value.trim()
+    }));
+    const { error } = await supabase.from('site_content').upsert(rows, { onConflict: 'key' });
+    note.textContent = error ? 'Error: ' + error.message : 'Saved.';
+    if (!error) toast('Saved');
+  });
+
+  async function testWebhook(inputId, noteId, method){
+    const url = document.getElementById(inputId).value.trim();
+    const note = document.getElementById(noteId);
+    if (!url){ note.textContent = 'Nothing to test — field is empty.'; note.style.color = 'var(--text-dim)'; return; }
+    note.textContent = 'Testing…';
+    note.style.color = 'var(--text-dim)';
+    try {
+      const res = await fetch(url, method === 'POST'
+        ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ test: true, message: 'ping from CMS' }) }
+        : { method: 'GET' }
+      );
+      if (res.ok){
+        note.textContent = `Reached it \u2014 responded ${res.status}.`;
+        note.style.color = '#3EAE6B';
+      } else {
+        note.textContent = `Responded but with an error: ${res.status}.`;
+        note.style.color = 'var(--accent)';
+      }
+    } catch(err){
+      note.textContent = "Couldn't reach it \u2014 check the URL, or it may be blocking cross-origin requests.";
+      note.style.color = 'var(--accent)';
+    }
+  }
+  document.getElementById('test-avail-url').addEventListener('click', () => testWebhook('int-avail-url','int-avail-note','GET'));
+  document.getElementById('test-book-url').addEventListener('click', () => testWebhook('int-book-url','int-book-note','POST'));
+  document.getElementById('test-chat-url').addEventListener('click', () => testWebhook('int-chat-url','int-chat-note','POST'));
+  document.getElementById('test-notify-url').addEventListener('click', () => testWebhook('int-notify-url','int-notify-note','POST'));
 
   // ---------- Shared: batch-save all rows in a container at once ----------
   async function saveAllCards(table, containerId, noteId, fieldTypes){
@@ -966,7 +1069,7 @@
 
   async function loadAll(){
     await Promise.all([
-      loadSiteContent(), heroBadges.load(), loadSolutions(), loadProjects(), loadStackItems(), loadStats(), loadBookings(), loadAvailability()
+      loadSiteContent(), heroBadges.load(), loadSolutions(), loadProjects(), loadStackItems(), loadStats(), loadBookings(), loadAvailability(), loadIntegrations()
     ]);
     const { data: heroData } = await supabase.from('site_content').select('value').eq('key','hero_photo_url').maybeSingle();
     if (heroData?.value){

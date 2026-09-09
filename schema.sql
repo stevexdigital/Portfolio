@@ -149,6 +149,8 @@ insert into public.site_content (key, value) values
   ('whatsapp_number', ''),
   ('n8n_availability_webhook_url', ''),
   ('n8n_booking_webhook_url', ''),
+  ('chat_endpoint_url', 'https://vqthioychxlqknfwboqk.supabase.co/functions/v1/portfolio-chat'),
+  ('notification_webhook_url', ''),
   ('about_heading', 'Who''s behind this?'),
   ('about_bio', 'I''m a self-taught automation builder learning by shipping — wiring together AI agents, CRMs, and workflow tools into systems that actually run without me.'),
   ('cta_primary_label', 'See my work'),

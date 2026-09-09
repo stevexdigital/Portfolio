@@ -458,6 +458,21 @@
   const SUPABASE_ANON_KEY = 'sb_publishable_pD_0O9o-4s6hzKh4wUFuRg_y6MoUoF8';
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let NOTIFICATION_WEBHOOK_URL = ''; // set from CMS once loaded
+
+  function notifyNewBooking(booking){
+    if (!NOTIFICATION_WEBHOOK_URL) return;
+    fetch(NOTIFICATION_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event: 'new_booking',
+        name: booking.name, email: booking.email,
+        date: booking.date, time: booking.time,
+        notes: booking.notes || ''
+      })
+    }).catch(() => {}); // fire-and-forget — a failed notification shouldn't block the booking itself
+  }
 
   function esc(str){ const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
   function initials(name){
@@ -641,6 +656,8 @@
       document.getElementById('contact-whatsapp').href = waLink;
       document.getElementById('footer-name').textContent = c.footer_name ? `Built by ${c.footer_name}.` : '';
       document.getElementById('footer-location').textContent = c.footer_location || '';
+      if (c.chat_endpoint_url) CHAT_ENDPOINT = c.chat_endpoint_url;
+      NOTIFICATION_WEBHOOK_URL = c.notification_webhook_url || '';
       document.getElementById('availability-schedule').textContent = formatAvailability(hours);
 
       // Booking: native calendar is now the default (Supabase-only mode works with zero extra setup).
@@ -784,6 +801,7 @@
         }
 
         if (success){
+          notifyNewBooking({ name, email, date: selectedDate, time: selectedTime, notes });
           note.textContent = mode === 'n8n'
             ? "You're booked — check your email for the confirmation."
             : "Booked! I'll follow up by email to confirm.";
@@ -889,6 +907,7 @@
       note.textContent = 'Something went wrong — try again or email directly below.';
       note.className = 'booking-note err';
     } else {
+      notifyNewBooking({ name: payload.name, email: payload.email, date: payload.preferred_date, time: payload.preferred_time, notes: payload.message });
       note.textContent = "Got it — I'll follow up by email soon.";
       note.className = 'booking-note ok';
       e.target.reset();
@@ -896,7 +915,7 @@
   });
 
   // ---------- CHAT WIDGET (real-time streaming via Supabase Edge Function) ----------
-  const CHAT_ENDPOINT = 'https://vqthioychxlqknfwboqk.supabase.co/functions/v1/portfolio-chat';
+  let CHAT_ENDPOINT = 'https://vqthioychxlqknfwboqk.supabase.co/functions/v1/portfolio-chat'; // overridden by CMS value once loaded
   const chatPanel = document.getElementById('chat-panel');
   const chatMessages = document.getElementById('chat-messages');
   const chatInput = document.getElementById('chat-input');
