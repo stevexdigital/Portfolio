@@ -98,6 +98,16 @@
   .cal-day-admin.selected{ background:var(--accent); color:#221304; }
   .bk-day-card{ margin-bottom:10px; }
 
+  /* ---------- CONTACTS CRM ---------- */
+  .crm-widget{ display:grid; grid-template-columns:1fr 1.3fr; gap:20px; align-items:start; }
+  @media (max-width:760px){ .crm-widget{ grid-template-columns:1fr; } }
+  .crm-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius); cursor:pointer; border:1px solid transparent; }
+  .crm-row:hover{ background:var(--panel-2); }
+  .crm-row.selected{ background:var(--panel-2); border-color:var(--accent); }
+  .crm-row .crm-name{ font-weight:500; font-size:0.9rem; }
+  .crm-row .crm-email{ font-size:0.78rem; color:var(--text-dim); }
+  .crm-status-badge{ font-size:0.68rem; padding:3px 9px; border-radius:999px; border:1px solid var(--line); color:var(--text-dim); white-space:nowrap; text-transform:capitalize; }
+
   #theme-toggle{
     position:fixed; top:16px; right:16px; z-index:50;
     width:38px; height:38px; padding:0; border-radius:50%;
@@ -275,17 +285,20 @@
 
     <section class="panel" id="panel-contacts">
       <h2>Contacts</h2>
-      <p class="hint">Every person who's booked a call, automatically added here — deduplicated by email, with their full booking history alongside. Track status and keep private notes on each lead.</p>
-      <div id="contacts-list"></div>
-      <div class="row" style="margin-top:14px;">
-        <button class="primary" id="save-contacts-btn">Save all</button>
-        <span class="save-note" id="contacts-note"></span>
-      </div>
-      <div class="add-form">
-        <label>Name</label><input id="new-contact-name">
-        <label>Email</label><input id="new-contact-email">
-        <label>Phone (optional)</label><input id="new-contact-phone">
-        <button class="primary" style="margin-top:12px;" id="add-contact-btn">Add contact manually</button>
+      <p class="hint">Everyone who's booked a call, automatically added here. Click a contact to view, edit, or add a note.</p>
+      <div class="crm-widget">
+        <div class="card">
+          <div id="contacts-rows"></div>
+          <div class="add-form">
+            <label>Name</label><input id="new-contact-name">
+            <label>Email</label><input id="new-contact-email">
+            <label>Phone (optional)</label><input id="new-contact-phone">
+            <button class="primary" style="margin-top:12px;" id="add-contact-btn">Add contact manually</button>
+          </div>
+        </div>
+        <div class="card">
+          <div id="contact-detail"><p class="hint">Select a contact on the left to view their details.</p></div>
+        </div>
       </div>
     </section>
 
@@ -977,74 +990,112 @@
     if (!error) toast('Saved');
   });
 
-  // ---------- CONTACTS (CRM) ----------
+  // ---------- CONTACTS (CRM: list + click-to-view detail) ----------
   const STATUS_OPTIONS = ['new','contacted','qualified','booked','closed'];
+  let contactsCache = [];
+  let historyByEmail = {};
+  let selectedContactId = null;
+
   async function loadContacts(){
     const [{ data: contacts, error }, { data: bookingRows }] = await Promise.all([
       supabase.from('contacts').select('*').order('updated_at', { ascending: false }),
       supabase.from('bookings').select('email,preferred_date,preferred_time').order('preferred_date')
     ]);
-    const container = document.getElementById('contacts-list');
-    if (error){ container.innerHTML = `<p class="hint">Error: ${esc(error.message)}</p>`; return; }
+    if (error){ document.getElementById('contacts-rows').innerHTML = `<p class="hint">Error: ${esc(error.message)}</p>`; return; }
 
-    const historyByEmail = {};
+    contactsCache = contacts || [];
+    historyByEmail = {};
     (bookingRows||[]).forEach(b => {
       if (!historyByEmail[b.email]) historyByEmail[b.email] = [];
       historyByEmail[b.email].push(`${b.preferred_date || '?'} ${b.preferred_time || ''}`.trim());
     });
 
-    container.innerHTML = (contacts||[]).map(c => {
-      const history = historyByEmail[c.email] || [];
-      return `
-      <div class="card" data-id="${c.id}">
-        <div class="field-grid">
-          <div><label>Name</label><input data-field="name" value="${esc(c.name)}"></div>
-          <div><label>Email</label><input data-field="email" value="${esc(c.email)}"></div>
-        </div>
-        <div class="field-grid">
-          <div><label>Phone</label><input data-field="phone" value="${esc(c.phone)}"></div>
-          <div><label>Status</label>
-            <select data-field="status">
-              ${STATUS_OPTIONS.map(s => `<option value="${s}" ${c.status===s?'selected':''}>${s}</option>`).join('')}
-            </select>
-          </div>
-        </div>
-        <label>Notes</label><textarea data-field="notes">${esc(c.notes)}</textarea>
-        <p class="hint" style="margin-top:10px;">
-          ${history.length ? `${history.length} booking${history.length>1?'s':''}: ${history.map(esc).join(' · ')}` : 'No bookings yet — added manually'}
-          &middot; source: ${esc(c.source || 'unknown')}
-        </p>
-        <div class="row" style="margin-top:10px;">
-          <button class="danger" data-delete>Delete</button>
-        </div>
-      </div>`;
-    }).join('') || `<p class="hint">No contacts yet — they'll appear automatically once someone books.</p>`;
-
-    container.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async (e) => {
-      const card = e.target.closest('.card');
-      if (!confirm('Delete this contact? (Their past bookings stay on record — this just removes the CRM entry.)')) return;
-      const { error: delErr } = await supabase.from('contacts').delete().eq('id', card.dataset.id);
-      if (!delErr){ card.remove(); toast('Deleted'); } else toast('Error: ' + delErr.message);
-    }));
+    renderContactsRows();
+    if (selectedContactId && contactsCache.some(c => c.id === selectedContactId)){
+      renderContactDetail(selectedContactId);
+    } else {
+      selectedContactId = null;
+      document.getElementById('contact-detail').innerHTML = `<p class="hint">Select a contact on the left to view their details.</p>`;
+    }
   }
 
-  document.getElementById('save-contacts-btn').addEventListener('click', async () => {
-    const note = document.getElementById('contacts-note');
-    const cards = document.querySelectorAll('#contacts-list .card[data-id]');
-    if (!cards.length){ note.textContent = 'Nothing to save.'; return; }
-    const rows = Array.from(cards).map(card => ({
-      id: Number(card.dataset.id),
-      name: card.querySelector('[data-field="name"]').value,
-      email: card.querySelector('[data-field="email"]').value,
-      phone: card.querySelector('[data-field="phone"]').value || null,
-      status: card.querySelector('[data-field="status"]').value,
-      notes: card.querySelector('[data-field="notes"]').value || null,
-      updated_at: new Date().toISOString()
-    }));
-    const { error } = await supabase.from('contacts').upsert(rows);
-    note.textContent = error ? 'Error: ' + error.message : 'Saved.';
-    if (!error){ toast('Saved'); loadContacts(); }
-  });
+  function renderContactsRows(){
+    const container = document.getElementById('contacts-rows');
+    container.innerHTML = contactsCache.map(c => `
+      <div class="crm-row ${c.id === selectedContactId ? 'selected' : ''}" data-id="${c.id}">
+        <div>
+          <div class="crm-name">${esc(c.name)}</div>
+          <div class="crm-email">${esc(c.email)}</div>
+        </div>
+        <span class="crm-status-badge">${esc(c.status)}</span>
+      </div>
+    `).join('') || `<p class="hint">No contacts yet — they'll appear automatically once someone books.</p>`;
+
+    container.querySelectorAll('.crm-row').forEach(row => {
+      row.addEventListener('click', () => {
+        selectedContactId = Number(row.dataset.id);
+        renderContactsRows();
+        renderContactDetail(selectedContactId);
+      });
+    });
+  }
+
+  function renderContactDetail(id){
+    const c = contactsCache.find(x => x.id === id);
+    const detail = document.getElementById('contact-detail');
+    if (!c){ detail.innerHTML = `<p class="hint">Select a contact on the left to view their details.</p>`; return; }
+
+    const history = historyByEmail[c.email] || [];
+    detail.innerHTML = `
+      <div class="field-grid">
+        <div><label>Name</label><input id="detail-name" value="${esc(c.name)}"></div>
+        <div><label>Email</label><input id="detail-email" value="${esc(c.email)}"></div>
+      </div>
+      <div class="field-grid">
+        <div><label>Phone</label><input id="detail-phone" value="${esc(c.phone)}"></div>
+        <div><label>Status</label>
+          <select id="detail-status">
+            ${STATUS_OPTIONS.map(s => `<option value="${s}" ${c.status===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <label>Notes</label><textarea id="detail-notes">${esc(c.notes)}</textarea>
+      <p class="hint" style="margin-top:10px;">
+        ${history.length ? `${history.length} booking${history.length>1?'s':''}: ${history.map(esc).join(' · ')}` : 'No bookings yet — added manually'}
+        &middot; source: ${esc(c.source || 'unknown')}
+      </p>
+      <div class="row" style="margin-top:14px;">
+        <button class="primary" id="detail-save-btn">Save</button>
+        <button class="danger" id="detail-delete-btn">Delete</button>
+        <span class="save-note" id="detail-note"></span>
+      </div>
+    `;
+
+    document.getElementById('detail-save-btn').addEventListener('click', async () => {
+      const note = document.getElementById('detail-note');
+      const payload = {
+        name: document.getElementById('detail-name').value,
+        email: document.getElementById('detail-email').value,
+        phone: document.getElementById('detail-phone').value || null,
+        status: document.getElementById('detail-status').value,
+        notes: document.getElementById('detail-notes').value || null,
+        updated_at: new Date().toISOString()
+      };
+      const { error } = await supabase.from('contacts').update(payload).eq('id', id);
+      note.textContent = error ? 'Error: ' + error.message : 'Saved.';
+      if (!error){ toast('Saved'); loadContacts(); }
+    });
+
+    document.getElementById('detail-delete-btn').addEventListener('click', async () => {
+      if (!confirm('Delete this contact? (Their past bookings stay on record — this just removes the CRM entry.)')) return;
+      const { error } = await supabase.from('contacts').delete().eq('id', id);
+      if (!error){
+        selectedContactId = null;
+        toast('Deleted');
+        loadContacts();
+      } else toast('Error: ' + error.message);
+    });
+  }
 
   document.getElementById('add-contact-btn').addEventListener('click', async () => {
     const name = document.getElementById('new-contact-name').value.trim();
