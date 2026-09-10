@@ -99,13 +99,14 @@
   .bk-day-card{ margin-bottom:10px; }
 
   /* ---------- CONTACTS CRM ---------- */
-  .crm-widget{ display:grid; grid-template-columns:1fr 1.3fr; gap:20px; align-items:start; }
-  @media (max-width:760px){ .crm-widget{ grid-template-columns:1fr; } }
-  .crm-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius); cursor:pointer; border:1px solid transparent; }
-  .crm-row:hover{ background:var(--panel-2); }
-  .crm-row.selected{ background:var(--panel-2); border-color:var(--accent); }
-  .crm-row .crm-name{ font-weight:500; font-size:0.9rem; }
-  .crm-row .crm-email{ font-size:0.78rem; color:var(--text-dim); }
+  .crm-table-wrap{ overflow-x:auto; margin-bottom:20px; border:1px solid var(--line); border-radius:var(--radius); }
+  .crm-table{ width:100%; border-collapse:collapse; font-size:0.88rem; }
+  .crm-table th{ text-align:left; padding:10px 14px; border-bottom:1px solid var(--line); background:var(--panel-2); color:var(--text-dim); font-weight:600; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em; }
+  .crm-table td{ padding:10px 14px; border-bottom:1px solid var(--line); }
+  .crm-table tr:last-child td{ border-bottom:none; }
+  .crm-table tr:hover td{ background:var(--panel-2); }
+  .crm-link{ color:var(--accent); cursor:pointer; font-weight:500; }
+  .crm-link:hover{ text-decoration:underline; }
   .crm-status-badge{ font-size:0.68rem; padding:3px 9px; border-radius:999px; border:1px solid var(--line); color:var(--text-dim); white-space:nowrap; text-transform:capitalize; }
 
   #theme-toggle{
@@ -285,20 +286,29 @@
 
     <section class="panel" id="panel-contacts">
       <h2>Contacts</h2>
-      <p class="hint">Everyone who's booked a call, automatically added here. Click a contact to view, edit, or add a note.</p>
-      <div class="crm-widget">
-        <div class="card">
-          <div id="contacts-rows"></div>
-          <div class="add-form">
-            <label>Name</label><input id="new-contact-name">
-            <label>Email</label><input id="new-contact-email">
-            <label>Phone (optional)</label><input id="new-contact-phone">
-            <button class="primary" style="margin-top:12px;" id="add-contact-btn">Add contact manually</button>
-          </div>
+      <p class="hint">Everyone who's booked a call, automatically added here. Click a name or email to view and edit.</p>
+
+      <div id="contacts-table-view">
+        <input id="contacts-search" placeholder="Search by name or email…" style="margin-bottom:16px;">
+        <div class="crm-table-wrap">
+          <table class="crm-table">
+            <thead>
+              <tr><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Bookings</th></tr>
+            </thead>
+            <tbody id="contacts-tbody"></tbody>
+          </table>
         </div>
-        <div class="card">
-          <div id="contact-detail"><p class="hint">Select a contact on the left to view their details.</p></div>
+        <div class="add-form">
+          <label>Name</label><input id="new-contact-name">
+          <label>Email</label><input id="new-contact-email">
+          <label>Phone (optional)</label><input id="new-contact-phone">
+          <button class="primary" style="margin-top:12px;" id="add-contact-btn">Add contact manually</button>
         </div>
+      </div>
+
+      <div id="contact-detail-view" style="display:none;">
+        <button type="button" class="cal-nav-admin" id="contact-back-btn" style="width:auto; padding:6px 14px; margin-bottom:20px;">&larr; Back to Contacts</button>
+        <div id="contact-detail"></div>
       </div>
     </section>
 
@@ -453,7 +463,7 @@
       loginScreen.style.display = 'none';
       appShell.style.display = 'flex';
       document.getElementById('whoami').textContent = session.user.email;
-      loadAll();
+      await loadAll();
       restorePanelFromHash();
     } else {
       loginScreen.style.display = 'block';
@@ -495,8 +505,12 @@
 
   // Restore the active tab from the URL on load/refresh, and on manual hash changes
   function restorePanelFromHash(){
-    const panelId = location.hash.replace('#', '');
+    const raw = location.hash.replace('#', '');
+    const [panelId, contactId] = raw.split(':');
     if (panelId) activatePanel(panelId);
+    if (panelId === 'panel-contacts' && contactId){
+      openContactDetail(Number(contactId), false);
+    }
   }
   window.addEventListener('hashchange', restorePanelFromHash);
 
@@ -990,18 +1004,18 @@
     if (!error) toast('Saved');
   });
 
-  // ---------- CONTACTS (CRM: list + click-to-view detail) ----------
+  // ---------- CONTACTS (CRM: searchable table + navigable detail page) ----------
   const STATUS_OPTIONS = ['new','contacted','qualified','booked','closed'];
   let contactsCache = [];
   let historyByEmail = {};
-  let selectedContactId = null;
+  let contactsSearchTerm = '';
 
   async function loadContacts(){
     const [{ data: contacts, error }, { data: bookingRows }] = await Promise.all([
       supabase.from('contacts').select('*').order('updated_at', { ascending: false }),
       supabase.from('bookings').select('email,preferred_date,preferred_time').order('preferred_date')
     ]);
-    if (error){ document.getElementById('contacts-rows').innerHTML = `<p class="hint">Error: ${esc(error.message)}</p>`; return; }
+    if (error){ document.getElementById('contacts-tbody').innerHTML = `<tr><td colspan="5" class="hint">Error: ${esc(error.message)}</td></tr>`; return; }
 
     contactsCache = contacts || [];
     historyByEmail = {};
@@ -1010,43 +1024,61 @@
       historyByEmail[b.email].push(`${b.preferred_date || '?'} ${b.preferred_time || ''}`.trim());
     });
 
-    renderContactsRows();
-    if (selectedContactId && contactsCache.some(c => c.id === selectedContactId)){
-      renderContactDetail(selectedContactId);
-    } else {
-      selectedContactId = null;
-      document.getElementById('contact-detail').innerHTML = `<p class="hint">Select a contact on the left to view their details.</p>`;
-    }
+    renderContactsTable();
   }
 
-  function renderContactsRows(){
-    const container = document.getElementById('contacts-rows');
-    container.innerHTML = contactsCache.map(c => `
-      <div class="crm-row ${c.id === selectedContactId ? 'selected' : ''}" data-id="${c.id}">
-        <div>
-          <div class="crm-name">${esc(c.name)}</div>
-          <div class="crm-email">${esc(c.email)}</div>
-        </div>
-        <span class="crm-status-badge">${esc(c.status)}</span>
-      </div>
-    `).join('') || `<p class="hint">No contacts yet — they'll appear automatically once someone books.</p>`;
+  function renderContactsTable(){
+    const term = contactsSearchTerm.toLowerCase();
+    const filtered = contactsCache.filter(c =>
+      !term || c.name.toLowerCase().includes(term) || c.email.toLowerCase().includes(term)
+    );
+    const tbody = document.getElementById('contacts-tbody');
+    tbody.innerHTML = filtered.map(c => {
+      const count = (historyByEmail[c.email] || []).length;
+      return `
+      <tr>
+        <td><span class="crm-link" data-id="${c.id}">${esc(c.name)}</span></td>
+        <td><span class="crm-link" data-id="${c.id}">${esc(c.email)}</span></td>
+        <td>${esc(c.phone) || '—'}</td>
+        <td><span class="crm-status-badge">${esc(c.status)}</span></td>
+        <td>${count || '—'}</td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="5" class="hint">${contactsCache.length ? 'No matches.' : "No contacts yet — they'll appear automatically once someone books."}</td></tr>`;
 
-    container.querySelectorAll('.crm-row').forEach(row => {
-      row.addEventListener('click', () => {
-        selectedContactId = Number(row.dataset.id);
-        renderContactsRows();
-        renderContactDetail(selectedContactId);
-      });
+    tbody.querySelectorAll('.crm-link').forEach(el => {
+      el.addEventListener('click', () => openContactDetail(Number(el.dataset.id)));
     });
   }
+
+  document.getElementById('contacts-search').addEventListener('input', (e) => {
+    contactsSearchTerm = e.target.value;
+    renderContactsTable();
+  });
+
+  function openContactDetail(id, updateHash = true){
+    const c = contactsCache.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('contacts-table-view').style.display = 'none';
+    document.getElementById('contact-detail-view').style.display = 'block';
+    if (updateHash) location.hash = `panel-contacts:${id}`;
+    renderContactDetail(id);
+  }
+
+  function closeContactDetail(){
+    document.getElementById('contacts-table-view').style.display = 'block';
+    document.getElementById('contact-detail-view').style.display = 'none';
+    location.hash = 'panel-contacts';
+  }
+  document.getElementById('contact-back-btn').addEventListener('click', closeContactDetail);
 
   function renderContactDetail(id){
     const c = contactsCache.find(x => x.id === id);
     const detail = document.getElementById('contact-detail');
-    if (!c){ detail.innerHTML = `<p class="hint">Select a contact on the left to view their details.</p>`; return; }
+    if (!c) return;
 
     const history = historyByEmail[c.email] || [];
     detail.innerHTML = `
+      <h2 style="margin-bottom:18px;">${esc(c.name)}</h2>
       <div class="field-grid">
         <div><label>Name</label><input id="detail-name" value="${esc(c.name)}"></div>
         <div><label>Email</label><input id="detail-email" value="${esc(c.email)}"></div>
@@ -1090,8 +1122,8 @@
       if (!confirm('Delete this contact? (Their past bookings stay on record — this just removes the CRM entry.)')) return;
       const { error } = await supabase.from('contacts').delete().eq('id', id);
       if (!error){
-        selectedContactId = null;
         toast('Deleted');
+        closeContactDetail();
         loadContacts();
       } else toast('Error: ' + error.message);
     });
