@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Page not found</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#FFFFFF">
+<script>
+  (function(){
+    try {
+      var t = localStorage.getItem('site-theme');
+      if (!t) t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      if (t === 'dark') document.documentElement.classList.add('dark');
+    } catch(e){}
+  })();
+</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230F2942'/%3E%3Crect x='4' y='4' width='56' height='56' rx='10' fill='%23E8954A'/%3E%3Ctext x='32' y='42' font-family='monospace' font-size='24' font-weight='600' fill='%2312233A' text-anchor='middle'%3E404%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF; --bg-panel:#F5F7FA; --bg-panel-2:#EDF1F5; --grid-line:rgba(15,41,66,0.05); --line:#DCE3EA;
+    --accent:#E8954A; --accent-hover:#F0A865; --trace:#1B8FA8; --text:#16202B; --text-dim:#51606F; --text-faint:#8A98A6;
+    --radius:4px;
+  }
+  :root.dark{
+    --bg:#0F2942; --bg-panel:#123554; --bg-panel-2:#0D2438; --grid-line:rgba(143,176,204,0.08); --line:#2C5578;
+    --trace:#6FC3D9; --text:#EDF3F8; --text-dim:#8FB0CC; --text-faint:#5C7C99;
+  }
+  *{ box-sizing:border-box; }
+  [hidden]{ display:none !important; }
+  html, body{ height:100%; }
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Montserrat',sans-serif; line-height:1.6;
+    background-image:linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size:40px 40px;
+    display:flex; flex-direction:column;
+  }
+  a:focus-visible, button:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  .top{ max-width:1160px; width:100%; margin:0 auto; padding:20px 32px; display:flex; justify-content:space-between; align-items:center; }
+  .brand{ display:flex; align-items:center; gap:8px; font-weight:700; text-decoration:none; color:var(--text); }
+  .brand .dot{ width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 8px var(--accent); }
+  .icon-btn{ width:36px; height:36px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:var(--bg-panel); border:1px solid var(--line); color:var(--text); cursor:pointer; transition:border-color .15s, color .15s; }
+  .icon-btn:hover{ border-color:var(--accent); color:var(--accent); }
+  .icon-btn svg{ width:17px; height:17px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .icon-moon{ display:none; }
+  :root.dark .icon-sun{ display:none; }
+  :root.dark .icon-moon{ display:block; }
+
+  main{ flex:1; display:flex; align-items:center; justify-content:center; padding:24px 20px 64px; }
+  .card{ max-width:640px; width:100%; text-align:center; }
+  .pipeline{ width:100%; max-width:440px; height:auto; margin:0 auto 12px; display:block; overflow:visible; }
+  .pipeline .node rect{ fill:var(--bg-panel); stroke:var(--line); }
+  .pipeline .node text{ font-family:'IBM Plex Mono',monospace; font-size:9px; fill:var(--text-dim); }
+  .pipeline .wire{ stroke:var(--trace); stroke-width:1.5; fill:none; stroke-dasharray:4 4; animation:flow 1s linear infinite; }
+  .pipeline .wire.broken{ stroke:var(--accent); animation:none; }
+  .pipeline .node.lost rect{ stroke:var(--accent); stroke-dasharray:3 3; fill:transparent; }
+  .pipeline .node.lost text{ fill:var(--accent); }
+  .pipeline .spark{ fill:var(--accent); animation:blink 1.4s ease-in-out infinite; }
+  .pipeline .dangle{ transform-origin:218px 60px; animation:dangle 2.8s ease-in-out infinite; }
+  @keyframes flow{ to{ stroke-dashoffset:-8; } }
+  @keyframes blink{ 50%{ opacity:0.2; } }
+  @keyframes dangle{ 0%,100%{ transform:rotate(0deg); } 50%{ transform:rotate(9deg); } }
+
+  .code{ font-family:'IBM Plex Mono',monospace; font-size:0.8rem; color:var(--accent); border:1px solid var(--line); display:inline-block; padding:5px 12px; border-radius:999px; }
+  h1{ font-size:clamp(1.8rem, 4vw, 2.4rem); line-height:1.2; margin:18px 0 0; letter-spacing:-0.01em; }
+  p.lead{ color:var(--text-dim); margin:14px auto 0; max-width:46ch; }
+  .path{ font-family:'IBM Plex Mono',monospace; font-size:0.8rem; color:var(--text-faint); margin-top:10px; word-break:break-all; }
+  .actions{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:28px; }
+  .btn{ display:inline-flex; align-items:center; gap:8px; padding:11px 20px; border-radius:var(--radius); font-family:inherit; font-size:0.9rem; font-weight:600; text-decoration:none; cursor:pointer; transition:transform .12s, background-color .15s, border-color .15s, color .15s, box-shadow .15s; }
+  .btn-primary{ background:var(--accent); color:#12233A; border:1px solid var(--accent); }
+  .btn-primary:hover{ background:var(--accent-hover); border-color:var(--accent-hover); transform:translateY(-1px); box-shadow:0 6px 18px rgba(232,149,74,0.35); }
+  .btn-ghost{ background:transparent; color:var(--text); border:1px solid var(--line); }
+  .btn-ghost:hover{ border-color:var(--accent); color:var(--accent); background:var(--bg-panel); transform:translateY(-1px); }
+  .links{ margin-top:36px; padding-top:24px; border-top:1px solid var(--line); display:flex; gap:10px 24px; justify-content:center; flex-wrap:wrap; font-size:0.88rem; }
+  .links span{ color:var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size:0.78rem; width:100%; }
+  .links a{ color:var(--text-dim); text-decoration:none; border-bottom:1px solid var(--line); transition:color .15s, border-color .15s; }
+  .links a:hover{ color:var(--accent); border-color:var(--accent); }
+  @media (max-width:560px){ .top{ padding:16px 20px; } }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+  <div class="top">
+    <a class="brand" href="/"><span class="dot"></span><span id="brand-name">Home</span></a>
+    <button type="button" class="icon-btn" id="theme-toggle" aria-label="Dark mode" aria-pressed="false">
+      <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+
+  <main>
+    <div class="card">
+      <svg class="pipeline" viewBox="0 0 440 120" role="img" aria-label="An automation pipeline with its last step disconnected">
+        <g class="node"><rect x="4" y="44" width="92" height="32" rx="4"/><text x="50" y="64" text-anchor="middle">request</text></g>
+        <path class="wire" d="M96 60 H 128"/>
+        <g class="node"><rect x="128" y="44" width="90" height="32" rx="4"/><text x="173" y="64" text-anchor="middle">router</text></g>
+        <g class="dangle">
+          <path class="wire broken" d="M218 60 C 240 60, 250 70, 262 88"/>
+          <circle class="spark" cx="263" cy="90" r="3"/>
+        </g>
+        <g class="node lost"><rect x="300" y="44" width="136" height="32" rx="4"/><text x="368" y="64" text-anchor="middle">this page ?</text></g>
+      </svg>
+      <span class="code">Error 404</span>
+      <h1>This step isn't connected to anything</h1>
+      <p class="lead">The page you're looking for was moved, renamed, or never existed. Everything else is still running — pick up from one of these:</p>
+      <p class="path" id="missing-path"></p>
+      <div class="actions">
+        <a class="btn btn-primary" href="/">Back to the homepage</a>
+        <a class="btn btn-ghost" href="/#search">Search the site</a>
+        <button type="button" class="btn btn-ghost" id="go-back" hidden>Go back</button>
+      </div>
+      <nav class="links" aria-label="Popular pages">
+        <span>Popular pages</span>
+        <a href="/#projects">Recent projects</a>
+        <a href="/#solutions">What I build</a>
+        <a href="/#booking">Book a call</a>
+        <a href="/#contact">Contact</a>
+      </nav>
+    </div>
+  </main>
+
+<script>
+  (function(){
+    var root = document.documentElement;
+    var btn = document.getElementById('theme-toggle');
+    function sync(){ btn.setAttribute('aria-pressed', String(root.classList.contains('dark'))); }
+    sync();
+    btn.addEventListener('click', function(){
+      var next = root.classList.contains('dark') ? 'light' : 'dark';
+      root.classList.toggle('dark', next === 'dark');
+      try { localStorage.setItem('site-theme', next); } catch(e){}
+      sync();
+    });
+
+    document.getElementById('missing-path').textContent = location.pathname + location.search;
+
+    // Only offer "Go back" when the visitor actually came from this site
+    var back = document.getElementById('go-back');
+    try {
+      if (document.referrer && new URL(document.referrer).host === location.host && history.length > 1){
+        back.hidden = false;
+        back.addEventListener('click', function(){ history.back(); });
+      }
+    } catch(e){}
+
+    // Show the real brand name from the CMS (best effort — the page works fine without it)
+    fetch('https://vqthioychxlqknfwboqk.supabase.co/rest/v1/site_content?select=value&key=eq.brand_name', {
+      headers: { apikey: 'sb_publishable_pD_0O9o-4s6hzKh4wUFuRg_y6MoUoF8' }
+    }).then(function(r){ return r.ok ? r.json() : []; }).then(function(rows){
+      if (rows && rows[0] && rows[0].value){
+        document.getElementById('brand-name').textContent = rows[0].value;
+        document.title = 'Page not found — ' + rows[0].value;
+      }
+    }).catch(function(){});
+  })();
+</script>
+</body>
+</html>
