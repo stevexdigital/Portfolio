@@ -6,15 +6,7 @@
 <title>Page not found</title>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#FFFFFF">
-<script>
-  (function(){
-    try {
-      var t = localStorage.getItem('site-theme');
-      if (!t) t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      if (t === 'dark') document.documentElement.classList.add('dark');
-    } catch(e){}
-  })();
-</script>
+<script src="/js/theme-init.js"></script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230F2942'/%3E%3Crect x='4' y='4' width='56' height='56' rx='10' fill='%23E8954A'/%3E%3Ctext x='32' y='42' font-family='monospace' font-size='24' font-weight='600' fill='%2312233A' text-anchor='middle'%3E404%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -123,40 +115,6 @@
     </div>
   </main>
 
-<script>
-  (function(){
-    var root = document.documentElement;
-    var btn = document.getElementById('theme-toggle');
-    function sync(){ btn.setAttribute('aria-pressed', String(root.classList.contains('dark'))); }
-    sync();
-    btn.addEventListener('click', function(){
-      var next = root.classList.contains('dark') ? 'light' : 'dark';
-      root.classList.toggle('dark', next === 'dark');
-      try { localStorage.setItem('site-theme', next); } catch(e){}
-      sync();
-    });
-
-    document.getElementById('missing-path').textContent = location.pathname + location.search;
-
-    // Only offer "Go back" when the visitor actually came from this site
-    var back = document.getElementById('go-back');
-    try {
-      if (document.referrer && new URL(document.referrer).host === location.host && history.length > 1){
-        back.hidden = false;
-        back.addEventListener('click', function(){ history.back(); });
-      }
-    } catch(e){}
-
-    // Show the real brand name from the CMS (best effort — the page works fine without it)
-    fetch('https://vqthioychxlqknfwboqk.supabase.co/rest/v1/site_content?select=value&key=eq.brand_name', {
-      headers: { apikey: 'sb_publishable_pD_0O9o-4s6hzKh4wUFuRg_y6MoUoF8' }
-    }).then(function(r){ return r.ok ? r.json() : []; }).then(function(rows){
-      if (rows && rows[0] && rows[0].value){
-        document.getElementById('brand-name').textContent = rows[0].value;
-        document.title = 'Page not found — ' + rows[0].value;
-      }
-    }).catch(function(){});
-  })();
-</script>
+<script src="/js/404.js"></script>
 </body>
 </html>

@@ -1,0 +1,14 @@
+# Secrets — never commit these. Keep real keys in Vercel / Supabase environment settings.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+supabase/.temp/
+supabase/.branches/
+
+# Local tooling
+node_modules/
+.vercel/
+.DS_Store
+*.log
