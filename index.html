@@ -220,34 +220,46 @@
   .hero p.sub{ color:var(--text-dim); font-size:1.02rem; max-width:48ch; margin-top:18px; }
   .hero-cta{ margin-top:30px; display:flex; gap:14px; flex-wrap:wrap; }
 
-  .photo-placeholder{ font-size:3rem; font-weight:700; color:var(--text-faint); }
-  @media (max-width:860px){ .hero{ padding:56px 0 64px; } }
-
-  /* ---------- HERO: n8n-style workflow canvas (background) + photo ---------- */
+  /* ---------- HERO: photo + n8n-style workflows along the bottom ---------- */
   :root{
     --ok:#29A368; --glass:rgba(255,255,255,0.78);
     --n8n-node:#FFFFFF; --n8n-border:#C9D2DC; --n8n-edge:#A9B8C7; --n8n-dot:rgba(15,41,66,0.14);
     --n8n-run:#FF6D5A; --n8n-shadow:rgba(15,41,66,0.12);
-    --sticky:#FFF5D6; --sticky-line:#F3D98B; --sticky-text:#6B5410;
   }
   :root.dark{
     --ok:#5FD39A; --glass:rgba(15,41,66,0.78);
     --n8n-node:#153E62; --n8n-border:#3F6B92; --n8n-edge:#4F7EA6; --n8n-dot:rgba(143,176,204,0.16);
     --n8n-run:#FF8A7A; --n8n-shadow:rgba(0,0,0,0.35);
-    --sticky:#3D3522; --sticky-line:#6B5A2E; --sticky-text:#F1DFA8;
   }
-  .hero{ position:relative; overflow:hidden; isolation:isolate; min-height:min(720px, 90vh); display:flex; align-items:center; }
-  .hero > .wrap{ position:relative; z-index:2; width:100%; }
-  .hero-copy{ max-width:min(520px, 46%); }
-  /* dotted canvas, like the n8n editor */
+  .hero{ position:relative; isolation:isolate; padding:72px 0 48px; }
+  .hero > .wrap{ position:relative; z-index:1; }
+  /* dotted canvas behind the workflows, like the n8n editor */
   .hero::before{ content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
     background-image:radial-gradient(var(--n8n-dot) 1.2px, transparent 1.4px); background-size:22px 22px;
-    -webkit-mask-image:linear-gradient(90deg, transparent 0%, transparent 30%, #000 60%);
-            mask-image:linear-gradient(90deg, transparent 0%, transparent 30%, #000 60%); }
-  .wf-bg{ position:absolute; top:0; bottom:0; z-index:1; pointer-events:none;
-    right:max(24px, calc((100% - 1160px) / 2 + 24px)); width:min(50%, 660px);
-    display:flex; align-items:center; }
-  .wf-bg svg{ width:100%; height:100%; max-height:700px; display:block; overflow:visible; }
+    -webkit-mask-image:linear-gradient(180deg, transparent 35%, #000 70%);
+            mask-image:linear-gradient(180deg, transparent 35%, #000 70%); }
+  .hero-top{ display:grid; grid-template-columns:1.1fr 0.9fr; gap:48px; align-items:center; }
+  .hero-top > *{ min-width:0; }
+
+  .hero-photo{ position:relative; width:100%; max-width:340px; aspect-ratio:1/1; margin:0 auto; }
+  .hero-photo .rings{ position:absolute; inset:0; width:100%; height:100%; animation:ring-spin 60s linear infinite; }
+  @keyframes ring-spin{ to{ transform:rotate(360deg); } }
+  .hero-photo .rings circle{ fill:none; stroke:var(--n8n-border); stroke-width:1; }
+  .hero-photo .rings circle.dash{ stroke:var(--trace); stroke-dasharray:2 6; opacity:.7; }
+  .hero-photo .ph{ position:absolute; inset:9%; border-radius:50%; overflow:hidden; background:var(--bg-panel); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; box-shadow:0 20px 50px -20px var(--n8n-shadow); }
+  .hero-photo .ph img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .hero-photo .ph img[hidden]{ display:none; }
+  .photo-placeholder{ font-size:3rem; font-weight:700; color:var(--text-faint); }
+
+  .wf-band{ margin-top:44px; display:flex; gap:28px; align-items:flex-start; }
+  .wf-flow{ min-width:0; }
+  .wf-flow.chat{ flex:720 1 0; }
+  .wf-flow.voice{ flex:640 1 0; }
+  .wf-flow-title{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; font-family:'IBM Plex Mono',monospace; font-size:.72rem; color:var(--text-faint); margin:0 0 6px 4px; }
+  .wf-flow-title b{ color:var(--text-dim); font-weight:500; white-space:nowrap; }
+  .wf-flow-title::before{ content:''; width:8px; height:8px; border-radius:2px; background:var(--n8n-run); }
+  .wf-flow svg{ width:100%; height:auto; display:block; overflow:visible; }
 
   .n-edge{ fill:none; stroke:var(--n8n-edge); stroke-width:2; transition:stroke .3s; }
   .n-edge.hot{ stroke:var(--n8n-run); stroke-dasharray:7 6; animation:wf-flow .55s linear infinite; }
@@ -259,15 +271,15 @@
   .n-node .body{ fill:var(--n8n-node); stroke:var(--n8n-border); stroke-width:1.6; transition:stroke .25s; }
   .n-node.running .body{ stroke:var(--n8n-run); stroke-width:2.2; }
   .n-node.done .body{ stroke:var(--ok); stroke-width:2.2; }
-  .n-node .handle-out{ fill:var(--n8n-edge); }
-  .n-node .handle-in{ fill:var(--n8n-edge); }
+  .n-node .handle-out, .n-node .handle-in{ fill:var(--n8n-edge); }
   .n-node .name{ fill:var(--text); font-family:'Montserrat',sans-serif; font-size:12px; font-weight:600; }
   .n-node .desc{ fill:var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size:9.5px; }
-  .n-node .inner{ fill:var(--text); font-family:'Montserrat',sans-serif; font-size:13px; font-weight:700; }
+  .n-node .iname{ fill:var(--text); font-family:'Montserrat',sans-serif; font-size:12.5px; font-weight:700; }
+  .n-node .idesc{ fill:var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size:9px; }
   .n-node .port{ fill:var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size:9px; }
   .n-node .diamond{ fill:var(--n8n-node); stroke:var(--n8n-edge); stroke-width:1.4; }
-  .n-node .ok, .n-node .spin{ opacity:0; transition:opacity .2s; }
-  .n-node.done .ok{ opacity:1; }
+  .n-node .ok, .n-node .spin, .n-sub .ok{ opacity:0; transition:opacity .2s; }
+  .n-node.done .ok, .n-sub.done .ok{ opacity:1; }
   .n-node.running .spin{ opacity:1; }
   .n-node .spin{ transform-box:fill-box; transform-origin:center; animation:wf-spin .8s linear infinite; }
   @keyframes wf-spin{ to{ transform:rotate(360deg); } }
@@ -281,17 +293,9 @@
   .n-sub .sdesc{ fill:var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size:8.5px; }
   .n-link{ stroke:var(--n8n-edge); stroke-width:1.6; stroke-dasharray:4 4; fill:none; transition:stroke .25s; }
   .n-link.done{ stroke:var(--ok); }
-  .n-node .iname{ fill:var(--text); font-family:'Montserrat',sans-serif; font-size:12.5px; font-weight:700; }
-  .n-node .idesc{ fill:var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size:9px; }
   .n-packet{ fill:var(--n8n-run); filter:drop-shadow(0 0 6px var(--n8n-run)); }
-  .sticky rect{ fill:var(--sticky); stroke:var(--sticky-line); }
-  .sticky text{ fill:var(--sticky-text); font-family:'Montserrat',sans-serif; }
-  .hero-ring{ fill:none; stroke:var(--n8n-border); stroke-width:1.2; }
-  .hero-ring.dash{ stroke:var(--trace); stroke-dasharray:2 7; opacity:.7; }
-  .hero-photo-bg{ fill:var(--bg-panel); stroke:var(--n8n-border); stroke-width:1.5; }
-  .hero-initials{ fill:var(--text-faint); font-family:'Montserrat',sans-serif; font-weight:700; font-size:64px; }
 
-  .wf-ticker{ display:inline-flex; align-items:center; gap:10px; margin-top:26px; max-width:min(100%, 410px);
+  .wf-ticker{ display:inline-flex; align-items:center; gap:10px; margin-top:26px; max-width:min(100%, 440px);
     background:var(--glass); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
     border:1px solid var(--line); border-radius:999px; padding:7px 14px;
     font-family:'IBM Plex Mono',monospace; font-size:.74rem; color:var(--text-dim); }
@@ -301,15 +305,15 @@
   .wf-ticker .msg{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
   .wf-ticker .hl{ color:var(--accent); }
 
-  @media (max-width:960px){
-    .hero{ min-height:0; flex-direction:column; align-items:stretch; }
-    .hero-copy{ max-width:none; }
-    .hero::before{ -webkit-mask-image:linear-gradient(180deg, transparent 40%, #000 70%); mask-image:linear-gradient(180deg, transparent 40%, #000 70%); }
-    .wf-bg{ position:relative; right:auto; top:auto; bottom:auto; width:100%; max-width:600px; margin:36px auto 0; padding:0 16px; }
-    .wf-bg svg{ height:auto; }
+  @media (max-width:860px){
+    .hero{ padding:56px 0 40px; }
+    .hero-top{ grid-template-columns:1fr; gap:32px; }
+    .hero-photo{ max-width:260px; }
+    .wf-band{ flex-direction:column; gap:28px; margin-top:36px; }
+    .wf-flow.chat, .wf-flow.voice{ flex:none; width:100%; }
   }
 
-    /* ---------- MARQUEE ---------- */
+  /* ---------- MARQUEE ---------- */
   .marquee-band{ border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--bg-panel-2); overflow:hidden; padding:16px 0; }
   .marquee-track{ display:flex; gap:44px; width:max-content; animation:scroll-left 28s linear infinite; }
   .marquee-band:hover .marquee-track{ animation-play-state:paused; }
@@ -620,7 +624,7 @@
     @page{ margin:16mm; }
     html, body{ background:#fff !important; color:#000; font-size:11pt; }
     body{ background-image:none !important; }
-    .skip-link, #scroll-progress, .site-header, .marquee-band, .hero-cta, .wf-bg, .wf-ticker,
+    .skip-link, #scroll-progress, .site-header, .marquee-band, .hero-cta, .wf-band, .wf-ticker, .hero-photo,
     #booking, #newsletter, #chat-fab, #chat-panel, #back-to-top, #contact-fab, #cookie-banner,
     #search-dialog, .code-copy, .copy-btn, .faq-icon{ display:none !important; }
     .wrap{ max-width:none; padding:0; }
@@ -681,43 +685,40 @@
 
 <section class="hero">
   <div class="wrap">
-    <div class="hero-copy reveal">
-      <span class="eyebrow"><span class="dot"></span>Welcome</span>
-      <h1>I'm <span id="hero-name" class="sk-inline"></span><br><span class="role sk-inline" id="hero-role"></span></h1>
-      <div class="hero-location mono" id="hero-location"></div>
-      <p class="sub sk-block" id="hero-sub"></p>
-      <div class="hero-cta">
-        <a class="btn btn-primary" href="#booking" id="cta-primary">Book a call</a>
-        <a class="btn btn-ghost" href="#" id="cta-secondary" target="_blank" rel="noopener">Call on WhatsApp</a>
+    <div class="hero-top">
+      <div class="hero-copy reveal">
+        <span class="eyebrow"><span class="dot"></span>Welcome</span>
+        <h1>I'm <span id="hero-name" class="sk-inline"></span><br><span class="role sk-inline" id="hero-role"></span></h1>
+        <div class="hero-location mono" id="hero-location"></div>
+        <p class="sub sk-block" id="hero-sub"></p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="#booking" id="cta-primary">Book a call</a>
+          <a class="btn btn-ghost" href="#" id="cta-secondary" target="_blank" rel="noopener">Call on WhatsApp</a>
+        </div>
+        <div class="wf-ticker" role="status" aria-live="off"><span class="live">live</span><span class="msg" id="wf-ticker">booting workflow…</span></div>
       </div>
-      <div class="wf-ticker" role="status" aria-live="off"><span class="live">live</span><span class="msg" id="wf-ticker">booting workflow…</span></div>
+      <div class="hero-photo reveal" style="--i:2">
+        <svg class="rings" viewBox="0 0 100 100" aria-hidden="true"><circle class="dash" cx="50" cy="50" r="49"/><circle cx="50" cy="50" r="44"/></svg>
+        <div class="ph"><img id="hero-photo-img" alt="" hidden><span class="photo-placeholder" id="hero-initials">…</span></div>
+      </div>
     </div>
-  </div>
-  <div class="wf-bg">
-    <svg viewBox="0 0 720 700" preserveAspectRatio="xMidYMid meet" id="wf-svg" role="img" aria-label="Photo of me between two n8n-style workflows: Messenger or WhatsApp to an AI agent with model and parser, a reply, a second AI agent, and a booked appointment; and an AI voice receptionist that books a call or visit">
-      <defs>
-        <clipPath id="hero-clip"><circle cx="392" cy="374" r="118"/></clipPath>
-        <marker id="n-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker>
-      </defs>
-      <g id="wf-edges"></g>
-      <g id="wf-nodes"></g>
-      <g id="wf-packets"></g>
-      <g class="sticky" transform="translate(562,318)">
-        <rect width="152" height="112" rx="6"/>
-        <text x="12" y="26" font-size="12" font-weight="700">Goal: book it</text>
-        <text x="12" y="47" font-size="10.5">Chat or voice, 24/7</text>
-        <text x="12" y="64" font-size="10.5">AI reads, replies, and</text>
-        <text x="12" y="81" font-size="10.5">books a call or a visit</text>
-        <text x="12" y="97" font-size="10.5">in the GHL calendar</text>
-      </g>
-      <g id="hero-photo">
-        <circle class="hero-ring dash" cx="392" cy="374" r="140"/>
-        <circle class="hero-ring" cx="392" cy="374" r="129"/>
-        <circle class="hero-photo-bg" cx="392" cy="374" r="118"/>
-        <text class="hero-initials" id="hero-initials" x="392" y="396" text-anchor="middle"></text>
-        <image id="hero-photo-img" x="274" y="256" width="236" height="236" preserveAspectRatio="xMidYMid slice" clip-path="url(#hero-clip)"/>
-      </g>
-    </svg>
+
+    <div class="wf-band reveal" style="--i:3">
+      <div class="wf-flow chat">
+        <div class="wf-flow-title"><b>Chat assistant</b> · Messenger / WhatsApp → booked appointment</div>
+        <svg viewBox="0 0 720 270" id="wf-chat" role="img" aria-label="n8n-style workflow: a Messenger or WhatsApp message goes to an AI agent with a model and parser, a reply is sent, a second AI agent reads the answer, and an appointment is booked">
+          <defs><marker id="n-arrow-chat" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker></defs>
+          <g class="wf-edges"></g><g class="wf-nodes"></g><g class="wf-packets"></g>
+        </svg>
+      </div>
+      <div class="wf-flow voice">
+        <div class="wf-flow-title"><b>AI voice receptionist</b> · phone call → booked appointment</div>
+        <svg viewBox="0 0 640 270" id="wf-voice" role="img" aria-label="n8n-style workflow: an incoming call is answered by an AI voice agent with a model and parser, open slots are checked, and an appointment is booked">
+          <defs><marker id="n-arrow-voice" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker></defs>
+          <g class="wf-edges"></g><g class="wf-nodes"></g><g class="wf-packets"></g>
+        </svg>
+      </div>
+    </div>
   </div>
 </section>
 
