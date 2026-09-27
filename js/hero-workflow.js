@@ -2,9 +2,13 @@
 // Kept in its own file (no inline scripts) so it works with the site's strict CSP.
 (function(){
 window.setHeroPhoto = function setHeroPhoto(url, initialsText){
-  const img = document.getElementById('hero-photo-img');
-  document.getElementById('hero-initials').textContent = initialsText || '';
-  if (url){ img.setAttribute('href', url); img.onerror = () => img.removeAttribute('href'); }
+  const img = document.getElementById('hero-photo-img'), ini = document.getElementById('hero-initials');
+  ini.textContent = initialsText || '';
+  if (!url) return;
+  img.onload = () => { img.hidden = false; ini.hidden = true; };
+  img.onerror = () => { img.hidden = true; ini.hidden = false; };
+  img.alt = 'Profile photo';
+  img.src = url;
 };
 (function initN8nCanvas(){
   const NS = 'http://www.w3.org/2000/svg';
@@ -26,31 +30,33 @@ window.setHeroPhoto = function setHeroPhoto(url, initialsText){
     parser:   `<path d="M5.5 2.5C3.5 2.5 4 5 4 6.5S3 8 2 8c1 0 2 .5 2 1.5S3.5 13.5 5.5 13.5M10.5 2.5c2 0 1.5 2.5 1.5 4s1 1.5 2 1.5c-1 0-2 .5-2 1.5s.5 4-1.5 4" fill="none" stroke="#7C5CFF" stroke-width="1.8" stroke-linecap="round"/>`,
     voice:    `<path d="M2 8h1.5M5 5v6M8 2.5v11M11 5v6M14 8h-1.5" stroke="#7C5CFF" stroke-width="2" stroke-linecap="round"/>`
   };
+  // Each workflow lives in its own SVG so they sit side by side on desktop and stack on phones.
   const NODES = [
     // 1) Chat: Messenger / WhatsApp → AI Agent (model + parser) → Send Reply → AI Agent (model + parser) → Book Appointment
-    {id:'msgr',  x:44,  y:26,  icon:'msgr',  name:'Messenger',        desc:'on new message', trigger:true},
-    {id:'wa',    x:44,  y:148, icon:'wa',    name:'WhatsApp',         desc:'on new message', trigger:true},
-    {id:'agent', x:190, y:84,  icon:'agent', name:'AI Agent',         desc:'understand', wide:true,
+    {id:'msgr',  svg:'chat',  x:44,  y:64,  icon:'msgr',  name:'Messenger',        desc:'on new message', trigger:true},
+    {id:'wa',    svg:'chat',  x:44,  y:184, icon:'wa',    name:'WhatsApp',         desc:'on new message', trigger:true},
+    {id:'agent', svg:'chat',  x:190, y:124, icon:'agent', name:'AI Agent',         desc:'understand', wide:true,
       subs:[{id:'a1', port:'Model',  icon:'llm',    label:'Model',  sdesc:'Claude'},
             {id:'a2', port:'Parser', icon:'parser', label:'Parser', sdesc:'JSON'}]},
-    {id:'reply', x:326, y:84,  icon:'reply', name:'Send Reply',       desc:'same channel'},
-    {id:'agent2',x:462, y:84,  icon:'agent', name:'AI Agent',         desc:'schedule', wide:true,
+    {id:'reply', svg:'chat',  x:326, y:124, icon:'reply', name:'Send Reply',       desc:'same channel'},
+    {id:'agent2',svg:'chat',  x:462, y:124, icon:'agent', name:'AI Agent',         desc:'schedule', wide:true,
       subs:[{id:'b1', port:'Model',  icon:'llm',    label:'Model',  sdesc:'Claude'},
             {id:'b2', port:'Parser', icon:'parser', label:'Parser', sdesc:'JSON'}]},
-    {id:'book',  x:612, y:84,  icon:'book',  name:'Book Appointment', desc:'call or visit'},
+    {id:'book',  svg:'chat',  x:612, y:124, icon:'book',  name:'Book Appointment', desc:'call or visit'},
     // 2) AI voice receptionist (model + parser) → Check Slots → Book Appointment
-    {id:'call',  x:44,  y:566, icon:'phone', name:'Incoming Call',    desc:'business line', trigger:true},
-    {id:'voice', x:190, y:566, icon:'voice', name:'Voice Agent',      desc:'receptionist', wide:true,
+    {id:'call',  svg:'voice', x:60,  y:124, icon:'phone', name:'Incoming Call',    desc:'business line', trigger:true},
+    {id:'voice', svg:'voice', x:214, y:124, icon:'voice', name:'Voice Agent',      desc:'receptionist', wide:true,
       subs:[{id:'v1', port:'Model',  icon:'voice',  label:'Model',  sdesc:'realtime'},
             {id:'v2', port:'Parser', icon:'parser', label:'Parser', sdesc:'JSON'}]},
-    {id:'slots', x:400, y:566, icon:'slots', name:'Check Slots',      desc:'GHL calendar'},
-    {id:'book2', x:612, y:566, icon:'book',  name:'Book Appointment', desc:'+ SMS confirm'}
+    {id:'slots', svg:'voice', x:392, y:124, icon:'slots', name:'Check Slots',      desc:'GHL calendar'},
+    {id:'book2', svg:'voice', x:548, y:124, icon:'book',  name:'Book Appointment', desc:'+ SMS confirm'}
   ];
   const EDGES = [['msgr','agent'],['wa','agent'],['agent','reply'],['reply','agent2'],['agent2','book'],['call','voice'],['voice','slots'],['slots','book2']];
   const byId = Object.fromEntries(NODES.map(n => [n.id, n]));
-  const edgesG = document.getElementById('wf-edges'), nodesG = document.getElementById('wf-nodes'), packetsG = document.getElementById('wf-packets');
+  const layer = (svg, cls) => document.querySelector(`#wf-${svg} .${cls}`);
+  if (!layer('chat', 'wf-nodes') || !layer('voice', 'wf-nodes')) return;
   const ticker = document.getElementById('wf-ticker');
-  const hero = document.querySelector('.hero');
+  const hero = document.querySelector('.wf-band');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const halfW = n => (n.wide ? WIDE : S) / 2;
@@ -93,39 +99,40 @@ window.setHeroPhoto = function setHeroPhoto(url, initialsText){
       <g class="ok" transform="translate(${SUB_R-4},${SUB_R-4})"><circle r="6" fill="var(--ok)"/><path d="M-2.5 0l1.8 1.8 3.4-3.6" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/></g>`;
   }
 
-  const edgeEls = {}, itemEls = {};
+  const edgeEls = {}, itemEls = {}, edgeSvg = {};
   EDGES.forEach(([f, t]) => {
     const [x1, y1] = outPt(byId[f]), [x2, y2] = inPt(byId[t]);
     const dx = Math.max(40, (x2 - x1) / 2);
     const p = document.createElementNS(NS, 'path');
     p.setAttribute('d', `M${x1+5},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2-6},${y2}`);
-    p.setAttribute('class', 'n-edge'); p.setAttribute('marker-end', 'url(#n-arrow)');
-    edgesG.appendChild(p); edgeEls[f+'>'+t] = p;
+    p.setAttribute('class', 'n-edge'); p.setAttribute('marker-end', `url(#n-arrow-${byId[f].svg})`);
+    layer(byId[f].svg, 'wf-edges').appendChild(p); edgeEls[f+'>'+t] = p;
     const lbl = document.createElementNS(NS, 'text');
     lbl.setAttribute('class', 'n-items'); lbl.setAttribute('x', (x1+x2)/2); lbl.setAttribute('y', (y1+y2)/2 - 8); lbl.setAttribute('text-anchor', 'middle');
     lbl.textContent = '1 item';
     if (x2 - x1 < 70) lbl.style.display = 'none';   // too short for a label
-    edgesG.appendChild(lbl); itemEls[f+'>'+t] = lbl;
+    layer(byId[f].svg, 'wf-edges').appendChild(lbl); itemEls[f+'>'+t] = lbl;
+    edgeSvg[f+'>'+t] = byId[f].svg;
   });
   const stub = (x, y) => `<line class="n-stub" x1="${x+5}" y1="${y}" x2="${x+22}" y2="${y}"/><g class="n-plus" transform="translate(${x+22},${y-8})"><rect width="16" height="16" rx="3"/><path d="M8 4v8M4 8h8"/></g>`;
-  edgesG.insertAdjacentHTML('beforeend', [byId.book, byId.book2].map(n => { const [x,y] = outPt(n); return stub(x,y); }).join(''));
+  [byId.book, byId.book2].forEach(n => { const [x,y] = outPt(n); layer(n.svg, 'wf-edges').insertAdjacentHTML('beforeend', stub(x,y)); });
 
   const nodeEls = {}, subEls = {}, linkEls = {};
   NODES.forEach(n => {
     const g = document.createElementNS(NS, 'g');
     g.setAttribute('class', 'n-node'); g.setAttribute('transform', `translate(${n.x},${n.y})`);
     g.innerHTML = nodeMarkup(n);
-    nodesG.appendChild(g); nodeEls[n.id] = g;
+    layer(n.svg, 'wf-nodes').appendChild(g); nodeEls[n.id] = g;
     (n.subs || []).forEach((sub, i) => {
       const sx = n.x + SUB_DX[i], sy = n.y + SUB_DY;
       const link = document.createElementNS(NS, 'path');
       link.setAttribute('class', 'n-link');
       link.setAttribute('d', `M${sx},${n.y + S/2 + 21} V${sy - SUB_R}`);
-      edgesG.appendChild(link); linkEls[sub.id] = link;
+      layer(n.svg, 'wf-edges').appendChild(link); linkEls[sub.id] = link;
       const sg = document.createElementNS(NS, 'g');
       sg.setAttribute('class', 'n-sub'); sg.setAttribute('transform', `translate(${sx},${sy})`);
       sg.innerHTML = subMarkup(sub);
-      nodesG.appendChild(sg); subEls[sub.id] = sg;
+      layer(n.svg, 'wf-nodes').appendChild(sg); subEls[sub.id] = sg;
     });
   });
 
@@ -152,7 +159,7 @@ window.setHeroPhoto = function setHeroPhoto(url, initialsText){
   function sendPacket(key, ms){
     return new Promise(res => {
       const path = edgeEls[key], len = path.getTotalLength();
-      const c = document.createElementNS(NS, 'circle'); c.setAttribute('r', '5'); c.setAttribute('class', 'n-packet'); packetsG.appendChild(c);
+      const c = document.createElementNS(NS, 'circle'); c.setAttribute('r', '5'); c.setAttribute('class', 'n-packet'); layer(edgeSvg[key], 'wf-packets').appendChild(c);
       path.classList.add('hot');
       const t0 = performance.now();
       (function step(now){
