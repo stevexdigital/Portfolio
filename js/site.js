@@ -7,7 +7,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const UI = window.SiteUI;
 let CHAT_ENDPOINT = 'https://vqthioychxlqknfwboqk.supabase.co/functions/v1/portfolio-chat'; // overridden by CMS value once loaded
 
-function esc(str){ const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
+// Escapes text for HTML, including quotes so values are safe inside attributes like value="…"
+function esc(str){ const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 // URLs from the CMS are only used if they're http(s) — blocks javascript:, data: and other script-capable links
 function safeUrl(value, { httpsOnly = false } = {}){
   if (!value) return '';

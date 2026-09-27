@@ -156,7 +156,8 @@ function restorePanelFromHash(){
 }
 window.addEventListener('hashchange', restorePanelFromHash);
 
-function esc(str){ const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
+// Escapes text for HTML, including quotes so values are safe inside attributes like value="…"
+function esc(str){ const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 
 // ---------- SITE CONTENT (key/value form) ----------
 const SITE_FIELDS = [

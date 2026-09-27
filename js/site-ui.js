@@ -8,7 +8,7 @@
     get: function(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
     set: function(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
   };
-  function esc(str){ var d = document.createElement('div'); d.textContent = str == null ? '' : String(str); return d.innerHTML; }
+  function esc(str){ var d = document.createElement('div'); d.textContent = str == null ? '' : String(str); return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
   function scrollBehavior(){ return reduceMotion.matches ? 'auto' : 'smooth'; }
   function onMediaChange(mq, fn){ if (mq.addEventListener) mq.addEventListener('change', fn); else if (mq.addListener) mq.addListener(fn); }
 
