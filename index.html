@@ -212,47 +212,104 @@
 
   /* ---------- HERO ---------- */
   .hero{ padding:80px 0 100px; overflow-x:hidden; overflow-x:clip; }
-  .hero-grid{ display:grid; grid-template-columns:1.05fr 1fr; gap:56px; align-items:center; }
   .eyebrow{ display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--accent); border:1px solid var(--line); padding:5px 12px; border-radius:999px; margin-bottom:20px; }
   .eyebrow .dot{ width:6px;height:6px;border-radius:50%; background:var(--accent); }
-  .hero h1{ font-size:clamp(2.1rem, 4vw, 3rem); line-height:1.15; }
+  .hero h1{ font-size:clamp(2.2rem, 4.6vw, 3.4rem); line-height:1.1; letter-spacing:-0.02em; }
   .hero h1 .role{ color:var(--accent); }
   .hero-location{ font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--text-faint); margin-top:10px; }
   .hero p.sub{ color:var(--text-dim); font-size:1.02rem; max-width:48ch; margin-top:18px; }
   .hero-cta{ margin-top:30px; display:flex; gap:14px; flex-wrap:wrap; }
 
-  .photo-stage{ position:relative; width:100%; max-width:380px; margin:0 auto; aspect-ratio:1/1; }
-  .ring-svg{ position:absolute; inset:0; width:100%; height:100%; animation:ring-spin 60s linear infinite; }
-  @keyframes ring-spin{ to{ transform:rotate(360deg); } }
-  .ring-svg circle{ fill:none; stroke:var(--line); stroke-width:1; }
-  .ring-svg circle.dash{ stroke:var(--trace); stroke-dasharray:2 6; opacity:0.6; }
-  .photo-wrap{
-    position:absolute; inset:9%; border-radius:50%; overflow:hidden;
-    background:var(--bg-panel); border:1px solid var(--line);
-    display:flex; align-items:center; justify-content:center;
-  }
-  .photo-wrap img{ width:100%; height:100%; object-fit:cover; }
   .photo-placeholder{ font-size:3rem; font-weight:700; color:var(--text-faint); }
-  .badge-chip{
-    position:absolute; font-family:'IBM Plex Mono',monospace; font-size:0.72rem;
-    background:var(--bg-panel); border:1px solid var(--line); border-radius:999px;
-    padding:7px 14px; white-space:nowrap; display:flex; align-items:center; gap:6px;
-    box-shadow:0 4px 14px rgba(0,0,0,0.15);
-  }
-  .badge-chip .dot{ width:5px;height:5px;border-radius:50%; background:var(--accent); }
-  .badge-chip.b1{ top:6%; left:-6%; }
-  .badge-chip.b2{ top:46%; right:-10%; }
-  .badge-chip.b3{ bottom:6%; left:2%; }
+  @media (max-width:860px){ .hero{ padding:56px 0 64px; } }
 
-  @media (max-width:860px){
-    .hero-grid{ grid-template-columns:1fr; }
-    .hero{ padding:56px 0 64px; }
-    .photo-stage{ margin-top:20px; max-width:320px; }
-    .badge-chip.b1{ left:0; }
-    .badge-chip.b2{ right:0; top:62%; }
+  /* ---------- HERO: n8n-style workflow canvas (background) + photo ---------- */
+  :root{
+    --ok:#29A368; --glass:rgba(255,255,255,0.78);
+    --n8n-node:#FFFFFF; --n8n-border:#C9D2DC; --n8n-edge:#A9B8C7; --n8n-dot:rgba(15,41,66,0.14);
+    --n8n-run:#FF6D5A; --n8n-shadow:rgba(15,41,66,0.12);
+    --sticky:#FFF5D6; --sticky-line:#F3D98B; --sticky-text:#6B5410;
+  }
+  :root.dark{
+    --ok:#5FD39A; --glass:rgba(15,41,66,0.78);
+    --n8n-node:#153E62; --n8n-border:#3F6B92; --n8n-edge:#4F7EA6; --n8n-dot:rgba(143,176,204,0.16);
+    --n8n-run:#FF8A7A; --n8n-shadow:rgba(0,0,0,0.35);
+    --sticky:#3D3522; --sticky-line:#6B5A2E; --sticky-text:#F1DFA8;
+  }
+  .hero{ position:relative; overflow:hidden; isolation:isolate; min-height:min(720px, 90vh); display:flex; align-items:center; }
+  .hero > .wrap{ position:relative; z-index:2; width:100%; }
+  .hero-copy{ max-width:min(520px, 46%); }
+  /* dotted canvas, like the n8n editor */
+  .hero::before{ content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background-image:radial-gradient(var(--n8n-dot) 1.2px, transparent 1.4px); background-size:22px 22px;
+    -webkit-mask-image:linear-gradient(90deg, transparent 0%, transparent 30%, #000 60%);
+            mask-image:linear-gradient(90deg, transparent 0%, transparent 30%, #000 60%); }
+  .wf-bg{ position:absolute; top:0; bottom:0; z-index:1; pointer-events:none;
+    right:max(24px, calc((100% - 1160px) / 2 + 24px)); width:min(50%, 660px);
+    display:flex; align-items:center; }
+  .wf-bg svg{ width:100%; height:100%; max-height:700px; display:block; overflow:visible; }
+
+  .n-edge{ fill:none; stroke:var(--n8n-edge); stroke-width:2; transition:stroke .3s; }
+  .n-edge.hot{ stroke:var(--n8n-run); stroke-dasharray:7 6; animation:wf-flow .55s linear infinite; }
+  .n-edge.done{ stroke:var(--ok); }
+  @keyframes wf-flow{ to{ stroke-dashoffset:-13; } }
+  .n-items{ font-family:'IBM Plex Mono',monospace; font-size:10px; fill:var(--ok); opacity:0; transition:opacity .3s; }
+  .n-items.show{ opacity:1; }
+  .n-node{ filter:drop-shadow(0 6px 14px var(--n8n-shadow)); }
+  .n-node .body{ fill:var(--n8n-node); stroke:var(--n8n-border); stroke-width:1.6; transition:stroke .25s; }
+  .n-node.running .body{ stroke:var(--n8n-run); stroke-width:2.2; }
+  .n-node.done .body{ stroke:var(--ok); stroke-width:2.2; }
+  .n-node .handle-out{ fill:var(--n8n-edge); }
+  .n-node .handle-in{ fill:var(--n8n-edge); }
+  .n-node .name{ fill:var(--text); font-family:'Montserrat',sans-serif; font-size:12px; font-weight:600; }
+  .n-node .desc{ fill:var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size:9.5px; }
+  .n-node .inner{ fill:var(--text); font-family:'Montserrat',sans-serif; font-size:13px; font-weight:700; }
+  .n-node .port{ fill:var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size:9px; }
+  .n-node .diamond{ fill:var(--n8n-node); stroke:var(--n8n-edge); stroke-width:1.4; }
+  .n-node .ok, .n-node .spin{ opacity:0; transition:opacity .2s; }
+  .n-node.done .ok{ opacity:1; }
+  .n-node.running .spin{ opacity:1; }
+  .n-node .spin{ transform-box:fill-box; transform-origin:center; animation:wf-spin .8s linear infinite; }
+  @keyframes wf-spin{ to{ transform:rotate(360deg); } }
+  .n-stub{ stroke:var(--n8n-edge); stroke-width:2; }
+  .n-plus rect{ fill:var(--n8n-node); stroke:var(--n8n-edge); stroke-width:1.4; }
+  .n-plus path{ stroke:var(--text-faint); stroke-width:1.6; }
+  .n-sub .ring{ fill:var(--n8n-node); stroke:var(--n8n-border); stroke-width:1.6; transition:stroke .25s; }
+  .n-sub.running .ring{ stroke:var(--n8n-run); stroke-width:2.2; }
+  .n-sub.done .ring{ stroke:var(--ok); stroke-width:2.2; }
+  .n-sub .lbl{ fill:var(--text); font-family:'Montserrat',sans-serif; font-size:10px; font-weight:600; }
+  .n-sub .sdesc{ fill:var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size:8.5px; }
+  .n-link{ stroke:var(--n8n-edge); stroke-width:1.6; stroke-dasharray:4 4; fill:none; transition:stroke .25s; }
+  .n-link.done{ stroke:var(--ok); }
+  .n-node .iname{ fill:var(--text); font-family:'Montserrat',sans-serif; font-size:12.5px; font-weight:700; }
+  .n-node .idesc{ fill:var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size:9px; }
+  .n-packet{ fill:var(--n8n-run); filter:drop-shadow(0 0 6px var(--n8n-run)); }
+  .sticky rect{ fill:var(--sticky); stroke:var(--sticky-line); }
+  .sticky text{ fill:var(--sticky-text); font-family:'Montserrat',sans-serif; }
+  .hero-ring{ fill:none; stroke:var(--n8n-border); stroke-width:1.2; }
+  .hero-ring.dash{ stroke:var(--trace); stroke-dasharray:2 7; opacity:.7; }
+  .hero-photo-bg{ fill:var(--bg-panel); stroke:var(--n8n-border); stroke-width:1.5; }
+  .hero-initials{ fill:var(--text-faint); font-family:'Montserrat',sans-serif; font-weight:700; font-size:64px; }
+
+  .wf-ticker{ display:inline-flex; align-items:center; gap:10px; margin-top:26px; max-width:min(100%, 410px);
+    background:var(--glass); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    border:1px solid var(--line); border-radius:999px; padding:7px 14px;
+    font-family:'IBM Plex Mono',monospace; font-size:.74rem; color:var(--text-dim); }
+  .wf-ticker .live{ display:inline-flex; align-items:center; gap:6px; color:var(--ok); font-weight:500; flex-shrink:0; }
+  .wf-ticker .live::before{ content:''; width:7px; height:7px; border-radius:50%; background:var(--ok); box-shadow:0 0 8px var(--ok); animation:wf-pulse 1.6s ease-in-out infinite; }
+  @keyframes wf-pulse{ 50%{ opacity:.35; } }
+  .wf-ticker .msg{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  .wf-ticker .hl{ color:var(--accent); }
+
+  @media (max-width:960px){
+    .hero{ min-height:0; flex-direction:column; align-items:stretch; }
+    .hero-copy{ max-width:none; }
+    .hero::before{ -webkit-mask-image:linear-gradient(180deg, transparent 40%, #000 70%); mask-image:linear-gradient(180deg, transparent 40%, #000 70%); }
+    .wf-bg{ position:relative; right:auto; top:auto; bottom:auto; width:100%; max-width:600px; margin:36px auto 0; padding:0 16px; }
+    .wf-bg svg{ height:auto; }
   }
 
-  /* ---------- MARQUEE ---------- */
+    /* ---------- MARQUEE ---------- */
   .marquee-band{ border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--bg-panel-2); overflow:hidden; padding:16px 0; }
   .marquee-track{ display:flex; gap:44px; width:max-content; animation:scroll-left 28s linear infinite; }
   .marquee-band:hover .marquee-track{ animation-play-state:paused; }
@@ -563,12 +620,12 @@
     @page{ margin:16mm; }
     html, body{ background:#fff !important; color:#000; font-size:11pt; }
     body{ background-image:none !important; }
-    .skip-link, #scroll-progress, .site-header, .marquee-band, .hero-cta, .photo-stage,
+    .skip-link, #scroll-progress, .site-header, .marquee-band, .hero-cta, .wf-bg, .wf-ticker,
     #booking, #newsletter, #chat-fab, #chat-panel, #back-to-top, #contact-fab, #cookie-banner,
     #search-dialog, .code-copy, .copy-btn, .faq-icon{ display:none !important; }
     .wrap{ max-width:none; padding:0; }
     .hero{ padding:0 0 12pt; }
-    .hero-grid, .about-grid{ display:block; }
+    .about-grid{ display:block; }
     .about-photo{ display:none; }
     .section{ padding:14pt 0; }
     .section-head{ margin-bottom:10pt; }
@@ -623,8 +680,8 @@
 <main id="main" tabindex="-1">
 
 <section class="hero">
-  <div class="wrap hero-grid">
-    <div class="reveal">
+  <div class="wrap">
+    <div class="hero-copy reveal">
       <span class="eyebrow"><span class="dot"></span>Welcome</span>
       <h1>I'm <span id="hero-name" class="sk-inline"></span><br><span class="role sk-inline" id="hero-role"></span></h1>
       <div class="hero-location mono" id="hero-location"></div>
@@ -633,17 +690,34 @@
         <a class="btn btn-primary" href="#booking" id="cta-primary">Book a call</a>
         <a class="btn btn-ghost" href="#" id="cta-secondary" target="_blank" rel="noopener">Call on WhatsApp</a>
       </div>
+      <div class="wf-ticker" role="status" aria-live="off"><span class="live">live</span><span class="msg" id="wf-ticker">booting workflow…</span></div>
     </div>
-    <div class="photo-stage reveal" style="--i:2">
-      <svg class="ring-svg" viewBox="0 0 100 100" aria-hidden="true">
-        <circle cx="50" cy="50" r="49" class="dash"/>
-        <circle cx="50" cy="50" r="44"/>
-      </svg>
-      <div class="photo-wrap" id="hero-photo-wrap">
-        <span class="photo-placeholder" id="hero-photo-placeholder">…</span>
-      </div>
-      <div id="hero-badges"></div>
-    </div>
+  </div>
+  <div class="wf-bg">
+    <svg viewBox="0 0 720 700" preserveAspectRatio="xMidYMid meet" id="wf-svg" role="img" aria-label="Photo of me between two n8n-style workflows: Messenger or WhatsApp to an AI agent with model and parser, a reply, a second AI agent, and a booked appointment; and an AI voice receptionist that books a call or visit">
+      <defs>
+        <clipPath id="hero-clip"><circle cx="392" cy="374" r="118"/></clipPath>
+        <marker id="n-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker>
+      </defs>
+      <g id="wf-edges"></g>
+      <g id="wf-nodes"></g>
+      <g id="wf-packets"></g>
+      <g class="sticky" transform="translate(562,318)">
+        <rect width="152" height="112" rx="6"/>
+        <text x="12" y="26" font-size="12" font-weight="700">Goal: book it</text>
+        <text x="12" y="47" font-size="10.5">Chat or voice, 24/7</text>
+        <text x="12" y="64" font-size="10.5">AI reads, replies, and</text>
+        <text x="12" y="81" font-size="10.5">books a call or a visit</text>
+        <text x="12" y="97" font-size="10.5">in the GHL calendar</text>
+      </g>
+      <g id="hero-photo">
+        <circle class="hero-ring dash" cx="392" cy="374" r="140"/>
+        <circle class="hero-ring" cx="392" cy="374" r="129"/>
+        <circle class="hero-photo-bg" cx="392" cy="374" r="118"/>
+        <text class="hero-initials" id="hero-initials" x="392" y="396" text-anchor="middle"></text>
+        <image id="hero-photo-img" x="274" y="256" width="236" height="236" preserveAspectRatio="xMidYMid slice" clip-path="url(#hero-clip)"/>
+      </g>
+    </svg>
   </div>
 </section>
 
@@ -890,6 +964,7 @@
 
 <div id="sr-status" class="visually-hidden" aria-live="polite"></div>
 
+<script src="js/hero-workflow.js" defer></script>
 <script src="js/site-ui.js"></script>
 
 <script type="module" src="js/site.js"></script>
