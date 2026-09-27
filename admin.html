@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — Portfolio CMS</title>
 <meta name="robots" content="noindex, nofollow">
+<script src="js/admin-theme-init.js"></script>
 <style>
   :root{
     --bg:#ffffff; --panel:#f5f6f8; --panel-2:#eef0f3; --line:#dde1e7;
@@ -38,9 +39,51 @@
     padding:10px 18px; border-radius:var(--radius); border:1px solid var(--line);
     background:var(--panel); color:var(--text); cursor:pointer;
   }
+  button{ transition:background-color .15s ease, border-color .15s ease, color .15s ease, filter .15s ease; }
   button.primary{ background:var(--accent); color:#221304; border-color:var(--accent); }
-  button.danger{ border-color:#7A3030; color:#E89A9A; background:transparent; }
-  button:hover{ filter:brightness(1.12); }
+  button.danger{ border-color:#C25454; color:#B23B3B; background:transparent; }
+  :root.dark button.danger{ border-color:#7A3030; color:#E89A9A; }
+  button:hover{ filter:brightness(1.12); border-color:var(--accent); }
+  button.primary:hover{ filter:brightness(1.08); }
+  button.danger:hover{ filter:none; background:rgba(194,84,84,0.12); border-color:#C25454; }
+  button:disabled{ opacity:0.6; cursor:not-allowed; filter:none; }
+  a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  [hidden]{ display:none !important; }
+
+  .skip-link{ position:fixed; left:16px; top:-80px; z-index:100; background:var(--accent); color:#221304; padding:10px 16px; border-radius:var(--radius); font-weight:600; text-decoration:none; transition:top .15s; }
+  .skip-link:focus{ top:12px; }
+
+  /* ---- password visibility toggle ---- */
+  .password-field{ position:relative; margin-top:6px; }
+  .password-field input{ margin-top:0; padding-right:48px; }
+  .password-toggle{
+    position:absolute; top:50%; right:6px; transform:translateY(-50%);
+    width:36px; height:32px; padding:0; border:none; background:transparent; color:var(--text-dim);
+    display:flex; align-items:center; justify-content:center; border-radius:var(--radius);
+  }
+  .password-toggle:hover{ color:var(--text); background:var(--panel); filter:none; }
+  .password-toggle svg{ width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .password-toggle .icon-eye-off{ display:none; }
+  .password-toggle[aria-pressed="true"] .icon-eye{ display:none; }
+  .password-toggle[aria-pressed="true"] .icon-eye-off{ display:block; }
+
+  /* ---- confirmation modal ---- */
+  #confirm-dialog{
+    width:min(420px, calc(100vw - 32px)); padding:0; border:1px solid var(--line); border-radius:10px;
+    background:var(--bg); color:var(--text); box-shadow:0 24px 60px rgba(0,0,0,0.3);
+  }
+  #confirm-dialog[open]{ animation:modal-in .16s ease; }
+  #confirm-dialog::backdrop{ background:rgba(10,14,20,0.55); }
+  @keyframes modal-in{ from{ opacity:0; transform:translateY(8px) scale(0.98); } }
+  .confirm-inner{ padding:24px; }
+  .confirm-icon{ width:40px; height:40px; border-radius:50%; background:rgba(194,84,84,0.14); color:#C25454; display:flex; align-items:center; justify-content:center; margin-bottom:14px; }
+  .confirm-icon svg{ width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  #confirm-title{ font-size:1.1rem; }
+  #confirm-message{ color:var(--text-dim); font-size:0.9rem; margin:6px 0 0; }
+  .confirm-actions{ justify-content:flex-end; margin-top:22px; }
+  button.danger-solid{ background:#C25454; border-color:#C25454; color:#fff; }
+  button.danger-solid:hover{ filter:brightness(1.1); border-color:#C25454; }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
   .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
   #error-msg{ color:#F0A5A5; font-size:0.88rem; margin-top:10px; }
 
@@ -89,11 +132,12 @@
   .bk-cal-widget{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
   @media (max-width:760px){ .bk-cal-widget{ grid-template-columns:1fr; } }
   .cal-header-admin{ display:flex; align-items:center; justify-content:space-between; font-weight:600; margin-bottom:12px; }
-  .cal-nav-admin{ background:none; border:1px solid var(--line); border-radius:var(--radius); width:26px; height:26px; cursor:pointer; color:var(--text); }
+  .cal-nav-admin{ background:none; border:1px solid var(--line); border-radius:var(--radius); width:26px; height:26px; cursor:pointer; color:var(--text); padding:0; }
+  .cal-nav-admin:hover{ border-color:var(--accent); color:var(--accent); filter:none; }
   .cal-grid-admin{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
   .cal-daylabel-admin{ font-size:0.68rem; color:var(--text-dim); text-align:center; padding-bottom:4px; }
   .cal-day-admin{ aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:0.8rem; border-radius:var(--radius); background:transparent; border:1px solid transparent; color:var(--text-dim); cursor:pointer; position:relative; }
-  .cal-day-admin:hover{ border-color:var(--line); }
+  .cal-day-admin:hover{ border-color:var(--accent); filter:none; }
   .cal-day-admin.has-bookings::after{ content:''; position:absolute; bottom:4px; width:4px; height:4px; border-radius:50%; background:var(--accent); }
   .cal-day-admin.selected{ background:var(--accent); color:#221304; }
   .bk-day-card{ margin-bottom:10px; }
@@ -115,6 +159,8 @@
     display:flex; align-items:center; justify-content:center;
     background:var(--panel); border:1px solid var(--line);
   }
+  #theme-toggle:hover{ filter:none; border-color:var(--accent); }
+  #theme-toggle:hover svg{ stroke:var(--accent); }
   #theme-toggle svg{ width:18px; height:18px; stroke:var(--text); fill:none; stroke-width:2; }
   #theme-toggle .icon-moon{ display:none; }
   :root.dark #theme-toggle .icon-sun{ display:none; }
@@ -133,7 +179,9 @@
 </head>
 <body>
 
-<button id="theme-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">
+<a class="skip-link" href="#main-content">Skip to content</a>
+
+<button id="theme-toggle" title="Toggle dark mode" aria-label="Dark mode" aria-pressed="false">
   <svg class="icon-sun" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="12" cy="12" r="4"/>
     <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
@@ -144,18 +192,24 @@
 </button>
 
 <!-- ================= LOGIN ================= -->
-<div id="login-screen">
+<form id="login-screen">
   <h1>Admin login</h1>
   <p style="color:var(--text-dim); font-size:0.9rem;">Portfolio CMS</p>
-  <label>Email</label>
-  <input type="email" id="login-email" autocomplete="username">
-  <label>Password</label>
-  <input type="password" id="login-password" autocomplete="current-password">
-  <div class="row" style="margin-top:20px;">
-    <button class="primary" id="login-btn">Log in</button>
+  <label for="login-email">Email</label>
+  <input type="email" id="login-email" autocomplete="username" required>
+  <label for="login-password">Password</label>
+  <div class="password-field">
+    <input type="password" id="login-password" autocomplete="current-password" required>
+    <button type="button" class="password-toggle" id="password-toggle" aria-label="Show password" aria-pressed="false" aria-controls="login-password">
+      <svg class="icon-eye" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      <svg class="icon-eye-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 19c-6.5 0-10-7-10-7a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>
+    </button>
   </div>
-  <div id="error-msg"></div>
-</div>
+  <div class="row" style="margin-top:20px;">
+    <button type="submit" class="primary" id="login-btn">Log in</button>
+  </div>
+  <div id="error-msg" role="alert"></div>
+</form>
 
 <!-- ================= APP SHELL ================= -->
 <div id="app-shell" style="display:none;">
@@ -169,15 +223,17 @@
       <button data-panel="panel-projects">Projects</button>
       <button data-panel="panel-stack">Stack</button>
       <button data-panel="panel-stats">About stats</button>
+      <button data-panel="panel-faqs">FAQs</button>
       <button data-panel="panel-availability">Availability</button>
       <button data-panel="panel-contacts">Contacts</button>
+      <button data-panel="panel-newsletter">Newsletter</button>
       <button data-panel="panel-bookings">Bookings</button>
       <button data-panel="panel-integrations">Integrations</button>
       <button data-panel="panel-photo">Photos</button>
     </nav>
     <button id="logout-btn">Log out</button>
   </aside>
-  <main class="wrap">
+  <main class="wrap" id="main-content" tabindex="-1">
     <section class="panel active" id="panel-site">
       <h2>Site text</h2>
       <p class="hint">These map directly to the hero, contact section, and footer on your live site.</p>
@@ -219,7 +275,7 @@
 
     <section class="panel" id="panel-projects">
       <h2>Projects</h2>
-      <p class="hint">For "Pipeline" layout, list steps separated by commas. For "Features" layout, one feature per line as <em>label | description</em>.</p>
+      <p class="hint">For "Pipeline" layout, list steps separated by commas. For "Features" layout, one feature per line as <em>label | description</em>. In a description, wrap code in triple backticks (<code>```</code>) to show it as a snippet with a copy button. The "Last updated" date on each project changes automatically when you edit its content.</p>
       <div id="projects-list"></div>
       <div class="row" style="margin-top:14px;">
         <button class="primary" id="save-projects-btn">Save all</button>
@@ -271,6 +327,37 @@
         <label>Label</label><input id="new-stat-label">
         <label>Value</label><input id="new-stat-value">
         <button class="primary" style="margin-top:12px;" id="add-stat-btn">Add stat</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-faqs">
+      <h2>FAQs</h2>
+      <p class="hint">Shown as expandable questions on your site. Lower order numbers show first. The FAQ section is hidden when there are none. Wrap code in triple backticks (<code>```</code>) to show it as a snippet with a copy button.</p>
+      <div id="faqs-list"></div>
+      <div class="row" style="margin-top:14px;">
+        <button class="primary" id="save-faqs-btn">Save all</button>
+        <span class="save-note" id="faqs-note"></span>
+      </div>
+      <div class="add-form">
+        <label for="new-faq-question">Question</label><input id="new-faq-question">
+        <label for="new-faq-answer">Answer</label><textarea id="new-faq-answer"></textarea>
+        <button class="primary" style="margin-top:12px;" id="add-faq-btn">Add FAQ</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-newsletter">
+      <h2>Newsletter</h2>
+      <p class="hint">Everyone who signed up with the newsletter form on your site.</p>
+      <div class="row" style="margin-bottom:14px;">
+        <button id="copy-subscribers-btn">Copy all emails</button>
+        <button id="export-subscribers-btn">Download CSV</button>
+        <span class="save-note" id="newsletter-note" style="margin-top:0;"></span>
+      </div>
+      <div class="crm-table-wrap">
+        <table class="crm-table">
+          <thead><tr><th>Email</th><th>Signed up</th><th><span style="position:absolute; left:-9999px;">Actions</span></th></tr></thead>
+          <tbody id="newsletter-tbody"></tbody>
+        </table>
       </div>
     </section>
 
@@ -368,9 +455,17 @@
 
       <h3 style="margin-top:28px; font-size:1.05rem;">Notifications</h3>
       <div class="card">
-        <label>Webhook to ping when a new booking comes in (Slack, Discord, Zapier, n8n — anything that accepts a POST)</label>
-        <div class="row"><input id="int-notify-url" style="flex:1;"><button id="test-notify-url">Test</button></div>
+        <label for="int-notify-url">Webhook to ping when a new booking comes in (Slack, Discord, Zapier, n8n — anything that accepts a POST)</label>
+        <div class="row"><input id="int-notify-url" style="flex:1;" placeholder="https://…"><button id="test-notify-url">Test</button></div>
         <span class="save-note" id="int-notify-note"></span>
+        <p class="hint" style="margin-bottom:0;">Kept private — only you can see this address, and notifications are sent by your database, not visitors' browsers.</p>
+        <label for="int-secret" style="margin-top:16px;">Signing secret</label>
+        <div class="row">
+          <input id="int-secret" style="flex:1;" readonly aria-describedby="int-secret-hint">
+          <button type="button" id="copy-secret-btn">Copy</button>
+          <button type="button" id="rotate-secret-btn">Generate new</button>
+        </div>
+        <p class="hint" id="int-secret-hint" style="margin-bottom:0;">Every notification includes <code>X-Webhook-Timestamp</code> and <code>X-Webhook-Signature</code> headers. To confirm a request really came from your site, compute HMAC-SHA256 of <code>timestamp + "." + raw body</code> with this secret and compare it to the signature (after <code>sha256=</code>). Reject requests older than 5 minutes. The Test button above only checks the address is reachable and isn't signed.</p>
       </div>
 
       <h3 style="margin-top:28px; font-size:1.05rem;">Contact</h3>
@@ -392,7 +487,7 @@
     <section class="panel" id="panel-photo">
       <h2>Header logo</h2>
       <p class="hint">Shown in the top-left of the nav bar, replacing the text brand name. Wide/rectangular logos work well here — leave unset to keep using the text name.</p>
-      <input type="file" id="logo-input" accept="image/*">
+      <input type="file" id="logo-input" accept="image/png,image/jpeg,image/webp,image/gif,image/x-icon,image/vnd.microsoft.icon">
       <div class="row" style="margin-top:12px;">
         <button class="primary" id="upload-logo-btn">Upload & use as header logo</button>
         <button class="danger" id="remove-logo-btn">Remove logo</button>
@@ -402,7 +497,7 @@
 
       <h2 style="margin-top:36px;">Hero photo</h2>
       <p class="hint">Uploads to your Supabase storage bucket and updates the site automatically.</p>
-      <input type="file" id="photo-input" accept="image/*">
+      <input type="file" id="photo-input" accept="image/png,image/jpeg,image/webp,image/gif,image/x-icon,image/vnd.microsoft.icon">
       <div class="row" style="margin-top:12px;">
         <button class="primary" id="upload-photo-btn">Upload & use this photo</button>
         <span class="save-note" id="photo-note"></span>
@@ -411,7 +506,7 @@
 
       <h2 style="margin-top:36px;">Favicon</h2>
       <p class="hint">The small icon shown in the browser tab. Square images work best (e.g. 512×512px).</p>
-      <input type="file" id="favicon-input" accept="image/*">
+      <input type="file" id="favicon-input" accept="image/png,image/jpeg,image/webp,image/gif,image/x-icon,image/vnd.microsoft.icon">
       <div class="row" style="margin-top:12px;">
         <button class="primary" id="upload-favicon-btn">Upload & use as favicon</button>
         <span class="save-note" id="favicon-note"></span>
@@ -421,856 +516,22 @@
   </main>
 </div>
 
-<div class="toast" id="toast"></div>
-
-<script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-
-  // ---- EDIT THESE TWO LINES with your Supabase project's values (same as index.html) ----
-  const SUPABASE_URL = 'https://vqthioychxlqknfwboqk.supabase.co';
-  const SUPABASE_ANON_KEY = 'sb_publishable_pD_0O9o-4s6hzKh4wUFuRg_y6MoUoF8';
-  // -----------------------------------------------------------------------------------------
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  // ---------- THEME TOGGLE ----------
-  const themeToggleBtn = document.getElementById('theme-toggle');
-  function applyTheme(mode){
-    document.documentElement.classList.toggle('dark', mode === 'dark');
-  }
-  applyTheme(localStorage.getItem('cms-theme') || 'light');
-  themeToggleBtn.addEventListener('click', () => {
-    const next = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
-    applyTheme(next);
-    localStorage.setItem('cms-theme', next);
-  });
-
-  const loginScreen = document.getElementById('login-screen');
-  const appShell = document.getElementById('app-shell');
-  const errorMsg = document.getElementById('error-msg');
-
-  function toast(msg){
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 1800);
-  }
-
-  // ---------- AUTH ----------
-  async function checkSession(){
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session){
-      loginScreen.style.display = 'none';
-      appShell.style.display = 'flex';
-      document.getElementById('whoami').textContent = session.user.email;
-      await loadAll();
-      restorePanelFromHash();
-    } else {
-      loginScreen.style.display = 'block';
-      appShell.style.display = 'none';
-    }
-  }
-
-  document.getElementById('login-btn').addEventListener('click', async () => {
-    errorMsg.textContent = '';
-    const email = document.getElementById('login-email').value.trim();
-    const password = document.getElementById('login-password').value;
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error){ errorMsg.textContent = error.message; return; }
-    checkSession();
-  });
-
-  document.getElementById('logout-btn').addEventListener('click', async () => {
-    await supabase.auth.signOut();
-    checkSession();
-  });
-
-  // ---------- NAV ----------
-  function activatePanel(panelId){
-    const targetBtn = document.querySelector(`nav button[data-panel="${panelId}"]`);
-    if (!targetBtn || !document.getElementById(panelId)) return false;
-    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('section.panel').forEach(p => p.classList.remove('active'));
-    targetBtn.classList.add('active');
-    document.getElementById(panelId).classList.add('active');
-    return true;
-  }
-
-  document.querySelectorAll('nav button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      activatePanel(btn.dataset.panel);
-      location.hash = btn.dataset.panel;
-    });
-  });
-
-  // Restore the active tab from the URL on load/refresh, and on manual hash changes
-  function restorePanelFromHash(){
-    const raw = location.hash.replace('#', '');
-    const [panelId, contactId] = raw.split(':');
-    if (panelId) activatePanel(panelId);
-    if (panelId === 'panel-contacts' && contactId){
-      openContactDetail(Number(contactId), false);
-    }
-  }
-  window.addEventListener('hashchange', restorePanelFromHash);
-
-  function esc(str){ const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
-
-  // ---------- SITE CONTENT (key/value form) ----------
-  const SITE_FIELDS = [
-    ['brand_name','Brand / nav name'],['hero_name','Hero: your name'],['hero_role','Hero: role/title'],
-    ['hero_location','Hero: location line'],['hero_sub','Hero: subheading', true],
-    ['about_heading','About: heading'],['about_bio','About: bio', true],
-    ['cta_primary_label','Primary button label'],['cta_secondary_label','Secondary button label'],
-    ['contact_heading','Contact heading'],
-    ['footer_name','Footer name'],['footer_location','Footer location']
-  ];
-
-  async function loadSiteContent(){
-    const { data } = await supabase.from('site_content').select('key,value');
-    const map = Object.fromEntries((data||[]).map(r => [r.key, r.value]));
-    const container = document.getElementById('site-content-fields');
-    container.innerHTML = SITE_FIELDS.map(([key,label,isLong]) => `
-      <label>${esc(label)}</label>
-      ${isLong ? `<textarea data-key="${key}">${esc(map[key]||'')}</textarea>`
-               : `<input data-key="${key}" value="${esc(map[key]||'')}">`}
-    `).join('');
-  }
-
-  document.getElementById('save-site-content').addEventListener('click', async () => {
-    const inputs = document.querySelectorAll('#site-content-fields [data-key]');
-    const rows = Array.from(inputs).map(el => ({ key: el.dataset.key, value: el.value }));
-    const { error } = await supabase.from('site_content').upsert(rows, { onConflict: 'key' });
-    document.getElementById('site-content-note').textContent = error ? 'Error: ' + error.message : 'Saved.';
-    if (!error) toast('Saved');
-  });
-
-  // ---------- INTEGRATIONS ----------
-  const INTEGRATION_FIELD_MAP = {
-    'int-avail-url': 'n8n_availability_webhook_url',
-    'int-book-url': 'n8n_booking_webhook_url',
-    'int-gcal-url': 'booking_calendar_url',
-    'int-chat-url': 'chat_endpoint_url',
-    'int-notify-url': 'notification_webhook_url',
-    'int-contact-email': 'contact_email',
-    'int-whatsapp': 'whatsapp_number',
-    'int-linkedin': 'contact_linkedin_url'
-  };
-
-  async function loadIntegrations(){
-    const { data } = await supabase.from('site_content').select('key,value');
-    const map = Object.fromEntries((data||[]).map(r => [r.key, r.value]));
-    Object.entries(INTEGRATION_FIELD_MAP).forEach(([elId, key]) => {
-      const el = document.getElementById(elId);
-      if (el) el.value = map[key] || '';
-    });
-  }
-
-  document.getElementById('save-integrations-btn').addEventListener('click', async () => {
-    const note = document.getElementById('integrations-note');
-    const rows = Object.entries(INTEGRATION_FIELD_MAP).map(([elId, key]) => ({
-      key, value: document.getElementById(elId).value.trim()
-    }));
-    const { error } = await supabase.from('site_content').upsert(rows, { onConflict: 'key' });
-    note.textContent = error ? 'Error: ' + error.message : 'Saved.';
-    if (!error) toast('Saved');
-  });
-
-  async function testWebhook(inputId, noteId, method){
-    const url = document.getElementById(inputId).value.trim();
-    const note = document.getElementById(noteId);
-    if (!url){ note.textContent = 'Nothing to test — field is empty.'; note.style.color = 'var(--text-dim)'; return; }
-    note.textContent = 'Testing…';
-    note.style.color = 'var(--text-dim)';
-    try {
-      const res = await fetch(url, method === 'POST'
-        ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ test: true, message: 'ping from CMS' }) }
-        : { method: 'GET' }
-      );
-      if (res.ok){
-        note.textContent = `Reached it \u2014 responded ${res.status}.`;
-        note.style.color = '#3EAE6B';
-      } else {
-        note.textContent = `Responded but with an error: ${res.status}.`;
-        note.style.color = 'var(--accent)';
-      }
-    } catch(err){
-      note.textContent = "Couldn't reach it \u2014 check the URL, or it may be blocking cross-origin requests.";
-      note.style.color = 'var(--accent)';
-    }
-  }
-  document.getElementById('test-avail-url').addEventListener('click', () => testWebhook('int-avail-url','int-avail-note','GET'));
-  document.getElementById('test-book-url').addEventListener('click', () => testWebhook('int-book-url','int-book-note','POST'));
-  document.getElementById('test-chat-url').addEventListener('click', () => testWebhook('int-chat-url','int-chat-note','POST'));
-  document.getElementById('test-notify-url').addEventListener('click', () => testWebhook('int-notify-url','int-notify-note','POST'));
-
-  // ---------- Shared: batch-save all rows in a container at once ----------
-  async function saveAllCards(table, containerId, noteId, fieldTypes){
-    const container = document.getElementById(containerId);
-    const note = document.getElementById(noteId);
-    const cards = container.querySelectorAll('.card[data-id]');
-    const rows = Array.from(cards).map(card => {
-      const row = { id: Number(card.dataset.id) };
-      card.querySelectorAll('[data-field]').forEach(el => {
-        const type = (fieldTypes && fieldTypes[el.dataset.field]) || (el.type === 'number' ? 'number' : 'text');
-        row[el.dataset.field] = type === 'number' ? Number(el.value)
-          : type === 'csv' ? el.value.split(',').map(s=>s.trim()).filter(Boolean)
-          : el.value;
-      });
-      return row;
-    });
-    if (!rows.length){ note.textContent = 'Nothing to save.'; return; }
-    const { error } = await supabase.from(table).upsert(rows);
-    note.textContent = error ? 'Error: ' + error.message : 'Saved.';
-    if (!error) toast('Saved');
-  }
-
-  // ---------- GENERIC SIMPLE LIST (hero_badges) ----------
-  function simpleList(table, containerId, fieldKey, placeholder){
-    return {
-      async load(){
-        const { data } = await supabase.from(table).select('*').order('sort_order');
-        const container = document.getElementById(containerId);
-        container.innerHTML = (data||[]).map(row => `
-          <div class="card" data-id="${row.id}">
-            <div class="row">
-              <input style="flex:1" data-field="${fieldKey}" value="${esc(row[fieldKey])}">
-              <input type="number" style="width:70px" data-field="sort_order" value="${row.sort_order}" title="order">
-              <button class="danger" data-delete>Delete</button>
-            </div>
-          </div>
-        `).join('') || `<p class="hint">${placeholder}</p>`;
-
-        container.querySelectorAll('[data-delete]').forEach(btn => {
-          btn.addEventListener('click', async (e) => {
-            const card = e.target.closest('.card');
-            if (!confirm('Delete this item?')) return;
-            const { error } = await supabase.from(table).delete().eq('id', card.dataset.id);
-            if (!error){ card.remove(); toast('Deleted'); } else toast('Error: ' + error.message);
-          });
-        });
-      }
-    };
-  }
-
-  const heroBadges = simpleList('hero_badges', 'hero-badges-list', 'label', 'No badges yet.');
-  document.getElementById('save-badges-btn').addEventListener('click', () => saveAllCards('hero_badges', 'hero-badges-list', 'badges-note'));
-
-  document.getElementById('add-badge-btn').addEventListener('click', async () => {
-    const label = document.getElementById('new-badge-label').value.trim();
-    if (!label) return;
-    const { error } = await supabase.from('hero_badges').insert({ label, sort_order: 99 });
-    if (!error){ document.getElementById('new-badge-label').value=''; heroBadges.load(); toast('Added'); }
-    else toast('Error: ' + error.message);
-  });
-
-  // ---------- STACK ITEMS (with per-item logo upload) ----------
-  async function loadStackItems(){
-    const { data } = await supabase.from('stack_items').select('*').order('sort_order');
-    const container = document.getElementById('stack-list');
-    container.innerHTML = (data||[]).map(row => `
-      <div class="card" data-id="${row.id}">
-        <div class="row">
-          <input style="flex:1" data-field="label" value="${esc(row.label)}">
-          <input type="number" style="width:70px" data-field="sort_order" value="${row.sort_order}" title="order">
-          <button class="danger" data-delete>Delete</button>
-        </div>
-        <div class="row" style="margin-top:12px; align-items:center;">
-          ${row.logo_url ? `<img src="${esc(row.logo_url)}" style="width:36px;height:36px;object-fit:contain;border-radius:6px;border:1px solid var(--line);">` : `<span class="hint" style="margin:0;">No logo uploaded — showing auto icon/monogram</span>`}
-          <input type="file" accept="image/*" data-logo-input style="flex:1;">
-          <button data-upload-logo>Upload logo</button>
-        </div>
-        <div class="save-note" data-logo-note></div>
-      </div>
-    `).join('') || `<p class="hint">No tools yet.</p>`;
-
-    container.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async (e) => {
-      const card = e.target.closest('.card');
-      if (!confirm('Delete this item?')) return;
-      const { error } = await supabase.from('stack_items').delete().eq('id', card.dataset.id);
-      if (!error){ card.remove(); toast('Deleted'); } else toast('Error: ' + error.message);
-    }));
-    container.querySelectorAll('[data-upload-logo]').forEach(btn => btn.addEventListener('click', async (e) => {
-      const card = e.target.closest('.card');
-      const id = card.dataset.id;
-      const fileInput = card.querySelector('[data-logo-input]');
-      const note = card.querySelector('[data-logo-note]');
-      if (!fileInput.files[0]){ note.textContent = 'Choose a file first.'; return; }
-      const file = fileInput.files[0];
-      const path = `stack-logos/${id}.` + file.name.split('.').pop();
-      note.textContent = 'Uploading…';
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
-      if (uploadError){ note.textContent = 'Error: ' + uploadError.message; return; }
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
-      const publicUrl = urlData.publicUrl + '?t=' + Date.now();
-      const { error: saveError } = await supabase.from('stack_items').update({ logo_url: publicUrl }).eq('id', id);
-      note.textContent = saveError ? 'Error: ' + saveError.message : 'Logo updated.';
-      if (!saveError){ toast('Logo updated'); loadStackItems(); }
-    }));
-  }
-
-  document.getElementById('add-stack-btn').addEventListener('click', async () => {
-    const label = document.getElementById('new-stack-label').value.trim();
-    if (!label) return;
-    const { error } = await supabase.from('stack_items').insert({ label, sort_order: 99 });
-    if (!error){ document.getElementById('new-stack-label').value=''; loadStackItems(); toast('Added'); }
-    else toast('Error: ' + error.message);
-  });
-  document.getElementById('save-stack-btn').addEventListener('click', () => saveAllCards('stack_items', 'stack-list', 'stack-note'));
-
-  // ---------- SOLUTIONS ----------
-  async function loadSolutions(){
-    const { data } = await supabase.from('solutions').select('*').order('sort_order');
-    const container = document.getElementById('solutions-list');
-    container.innerHTML = (data||[]).map(row => `
-      <div class="card" data-id="${row.id}">
-        <label>Title</label><input data-field="title" value="${esc(row.title)}">
-        <label>Description</label><textarea data-field="description">${esc(row.description)}</textarea>
-        <div class="row" style="margin-top:10px;">
-          <button class="danger" data-delete>Delete</button>
-        </div>
-      </div>
-    `).join('') || `<p class="hint">No solutions yet.</p>`;
-
-    container.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async (e) => {
-      const card = e.target.closest('.card');
-      if (!confirm('Delete this solution?')) return;
-      const { error } = await supabase.from('solutions').delete().eq('id', card.dataset.id);
-      if (!error){ card.remove(); toast('Deleted'); } else toast('Error: ' + error.message);
-    }));
-  }
-  document.getElementById('save-solutions-btn').addEventListener('click', () => saveAllCards('solutions', 'solutions-list', 'solutions-note'));
-
-  document.getElementById('add-solution-btn').addEventListener('click', async () => {
-    const title = document.getElementById('new-solution-title').value.trim();
-    const description = document.getElementById('new-solution-desc').value.trim();
-    if (!title || !description) return;
-    const { error } = await supabase.from('solutions').insert({ title, description, sort_order: 99 });
-    if (!error){
-      document.getElementById('new-solution-title').value='';
-      document.getElementById('new-solution-desc').value='';
-      loadSolutions(); toast('Added');
-    } else toast('Error: ' + error.message);
-  });
-
-  // ---------- ABOUT STATS ----------
-  async function loadStats(){
-    const { data } = await supabase.from('about_stats').select('*').order('sort_order');
-    const container = document.getElementById('stats-list');
-    container.innerHTML = (data||[]).map(row => `
-      <div class="card" data-id="${row.id}">
-        <div class="field-grid">
-          <div><label>Label</label><input data-field="label" value="${esc(row.label)}"></div>
-          <div><label>Value</label><input data-field="value" value="${esc(row.value)}"></div>
-        </div>
-        <div class="row" style="margin-top:10px;">
-          <button class="danger" data-delete>Delete</button>
-        </div>
-      </div>
-    `).join('') || `<p class="hint">No stats yet.</p>`;
-
-    container.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async (e) => {
-      const card = e.target.closest('.card');
-      if (!confirm('Delete this stat?')) return;
-      const { error } = await supabase.from('about_stats').delete().eq('id', card.dataset.id);
-      if (!error){ card.remove(); toast('Deleted'); } else toast('Error: ' + error.message);
-    }));
-  }
-  document.getElementById('save-stats-btn').addEventListener('click', () => saveAllCards('about_stats', 'stats-list', 'stats-note'));
-
-  document.getElementById('add-stat-btn').addEventListener('click', async () => {
-    const label = document.getElementById('new-stat-label').value.trim();
-    const value = document.getElementById('new-stat-value').value.trim();
-    if (!label || !value) return;
-    const { error } = await supabase.from('about_stats').insert({ label, value, sort_order: 99 });
-    if (!error){
-      document.getElementById('new-stat-label').value='';
-      document.getElementById('new-stat-value').value='';
-      loadStats(); toast('Added');
-    } else toast('Error: ' + error.message);
-  });
-
-  // ---------- PROJECTS ----------
-  function nodesToCsv(nodes){ return Array.isArray(nodes) ? nodes.join(', ') : ''; }
-  function csvToNodes(csv){ return csv.split(',').map(s => s.trim()).filter(Boolean); }
-  function featuresToLines(features){
-    return Array.isArray(features) ? features.map(f => `${f.label} | ${f.desc}`).join('\n') : '';
-  }
-  function linesToFeatures(text){
-    return text.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
-      const [label, ...rest] = l.split('|');
-      return { label: (label||'').trim(), desc: rest.join('|').trim() };
-    });
-  }
-
-  async function loadProjects(){
-    const { data } = await supabase.from('projects').select('*').order('sort_order');
-    const container = document.getElementById('projects-list');
-    container.innerHTML = (data||[]).map(row => `
-      <div class="card" data-id="${row.id}">
-        <div class="field-grid">
-          <div><label>Title</label><input data-field="title" value="${esc(row.title)}"></div>
-          <div><label>Who / context</label><input data-field="who" value="${esc(row.who)}"></div>
-        </div>
-        <div class="field-grid">
-          <div><label>Status</label>
-            <select data-field="status">
-              <option value="live" ${row.status==='live'?'selected':''}>live</option>
-              <option value="in progress" ${row.status!=='live'?'selected':''}>in progress</option>
-            </select>
-          </div>
-          <div><label>Layout</label>
-            <select data-field="layout">
-              <option value="pipeline" ${row.layout==='pipeline'?'selected':''}>pipeline</option>
-              <option value="features" ${row.layout==='features'?'selected':''}>features</option>
-            </select>
-          </div>
-        </div>
-        <label>Description</label><textarea data-field="description">${esc(row.description)}</textarea>
-        <label>Pipeline steps (comma-separated)</label>
-        <input data-field="nodes_csv" value="${esc(nodesToCsv(row.nodes))}">
-        <label>Features (one per line: label | description)</label>
-        <textarea data-field="features_lines">${esc(featuresToLines(row.features))}</textarea>
-        <label>Tags (comma-separated)</label>
-        <input data-field="tags_csv" value="${esc((row.tags||[]).join(', '))}">
-        <label>Link URL</label>
-        <input data-field="link_url" value="${esc(row.link_url)}">
-        <div class="row" style="margin-top:12px;">
-          <button class="danger" data-delete>Delete</button>
-        </div>
-      </div>
-    `).join('') || `<p class="hint">No projects yet.</p>`;
-
-    container.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async (e) => {
-      const card = e.target.closest('.card');
-      if (!confirm('Delete this project?')) return;
-      const { error } = await supabase.from('projects').delete().eq('id', card.dataset.id);
-      if (!error){ card.remove(); toast('Deleted'); } else toast('Error: ' + error.message);
-    }));
-  }
-
-  document.getElementById('save-projects-btn').addEventListener('click', async () => {
-    const container = document.getElementById('projects-list');
-    const note = document.getElementById('projects-note');
-    const cards = container.querySelectorAll('.card[data-id]');
-    const rows = Array.from(cards).map(card => {
-      const get = (f) => card.querySelector(`[data-field="${f}"]`).value;
-      return {
-        id: Number(card.dataset.id),
-        title: get('title'), who: get('who'), status: get('status'), layout: get('layout'),
-        description: get('description'),
-        nodes: get('nodes_csv') ? csvToNodes(get('nodes_csv')) : null,
-        features: get('features_lines') ? linesToFeatures(get('features_lines')) : null,
-        tags: get('tags_csv') ? get('tags_csv').split(',').map(s=>s.trim()).filter(Boolean) : [],
-        link_url: get('link_url') || null
-      };
-    });
-    if (!rows.length){ note.textContent = 'Nothing to save.'; return; }
-    const { error } = await supabase.from('projects').upsert(rows);
-    note.textContent = error ? 'Error: ' + error.message : 'Saved.';
-    if (!error) toast('Saved');
-  });
-
-  document.getElementById('add-project-btn').addEventListener('click', async () => {
-    const title = document.getElementById('new-project-title').value.trim();
-    const description = document.getElementById('new-project-desc').value.trim();
-    if (!title || !description) return;
-    const payload = {
-      title,
-      who: document.getElementById('new-project-who').value.trim(),
-      status: document.getElementById('new-project-status').value,
-      layout: document.getElementById('new-project-layout').value,
-      description,
-      nodes: document.getElementById('new-project-nodes').value ? csvToNodes(document.getElementById('new-project-nodes').value) : null,
-      features: document.getElementById('new-project-features').value ? linesToFeatures(document.getElementById('new-project-features').value) : null,
-      tags: document.getElementById('new-project-tags').value.split(',').map(s=>s.trim()).filter(Boolean),
-      link_url: document.getElementById('new-project-link').value.trim() || null,
-      sort_order: 99
-    };
-    const { error } = await supabase.from('projects').insert(payload);
-    if (!error){
-      ['title','who','desc','nodes','features','tags','link'].forEach(f => {
-        const el = document.getElementById('new-project-'+f);
-        if (el) el.value = '';
-      });
-      loadProjects(); toast('Added');
-    } else toast('Error: ' + error.message);
-  });
-
-  // ---------- HEADER LOGO ----------
-  document.getElementById('upload-logo-btn').addEventListener('click', async () => {
-    const fileInput = document.getElementById('logo-input');
-    const note = document.getElementById('logo-note');
-    if (!fileInput.files[0]){ note.textContent = 'Choose a file first.'; return; }
-    const file = fileInput.files[0];
-    const path = 'header-logo.' + file.name.split('.').pop();
-    note.textContent = 'Uploading…';
-    const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
-    if (uploadError){ note.textContent = 'Error: ' + uploadError.message; return; }
-    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
-    const publicUrl = urlData.publicUrl + '?t=' + Date.now();
-    const { error: saveError } = await supabase.from('site_content').upsert({ key: 'header_logo_url', value: publicUrl }, { onConflict: 'key' });
-    note.textContent = saveError ? 'Error: ' + saveError.message : 'Uploaded and set as your header logo.';
-    if (!saveError){
-      document.getElementById('logo-preview').src = publicUrl;
-      document.getElementById('logo-preview').style.display = 'block';
-      toast('Logo updated');
-    }
-  });
-  document.getElementById('remove-logo-btn').addEventListener('click', async () => {
-    const note = document.getElementById('logo-note');
-    const { error } = await supabase.from('site_content').upsert({ key: 'header_logo_url', value: '' }, { onConflict: 'key' });
-    note.textContent = error ? 'Error: ' + error.message : 'Removed — back to text brand name.';
-    if (!error){
-      document.getElementById('logo-preview').style.display = 'none';
-      toast('Logo removed');
-    }
-  });
-
-  // ---------- HERO PHOTO ----------
-  document.getElementById('upload-photo-btn').addEventListener('click', async () => {
-    const fileInput = document.getElementById('photo-input');
-    const note = document.getElementById('photo-note');
-    if (!fileInput.files[0]){ note.textContent = 'Choose a file first.'; return; }
-    const file = fileInput.files[0];
-    const path = 'hero.' + file.name.split('.').pop();
-    note.textContent = 'Uploading…';
-    const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
-    if (uploadError){ note.textContent = 'Error: ' + uploadError.message; return; }
-    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
-    const publicUrl = urlData.publicUrl + '?t=' + Date.now(); // cache-bust
-    const { error: saveError } = await supabase.from('site_content').upsert({ key: 'hero_photo_url', value: publicUrl }, { onConflict: 'key' });
-    note.textContent = saveError ? 'Error: ' + saveError.message : 'Uploaded and set as your hero photo.';
-    if (!saveError){
-      document.getElementById('photo-preview').src = publicUrl;
-      document.getElementById('photo-preview').style.display = 'block';
-      toast('Photo updated');
-    }
-  });
-
-  // ---------- FAVICON ----------
-  document.getElementById('upload-favicon-btn').addEventListener('click', async () => {
-    const fileInput = document.getElementById('favicon-input');
-    const note = document.getElementById('favicon-note');
-    if (!fileInput.files[0]){ note.textContent = 'Choose a file first.'; return; }
-    const file = fileInput.files[0];
-    const path = 'favicon.' + file.name.split('.').pop();
-    note.textContent = 'Uploading…';
-    const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
-    if (uploadError){ note.textContent = 'Error: ' + uploadError.message; return; }
-    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
-    const publicUrl = urlData.publicUrl + '?t=' + Date.now();
-    const { error: saveError } = await supabase.from('site_content').upsert({ key: 'favicon_url', value: publicUrl }, { onConflict: 'key' });
-    note.textContent = saveError ? 'Error: ' + saveError.message : 'Uploaded and set as your favicon.';
-    if (!saveError){
-      document.getElementById('favicon-preview').src = publicUrl;
-      document.getElementById('favicon-preview').style.display = 'block';
-      toast('Favicon updated');
-    }
-  });
-
-  // ---------- LOAD EVERYTHING ----------
-  // ---------- AVAILABILITY ----------
-  const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  async function loadAvailability(){
-    const { data, error } = await supabase.from('availability_hours').select('*').order('day_of_week');
-    const container = document.getElementById('availability-list');
-    if (error){ container.innerHTML = `<p class="hint">Error: ${esc(error.message)}</p>`; return; }
-    container.innerHTML = (data||[]).map(row => `
-      <div class="card" data-id="${row.day_of_week}">
-        <div class="row" style="align-items:center;">
-          <label style="margin:0; width:110px; flex-shrink:0;">
-            <input type="checkbox" data-field="enabled" ${row.enabled ? 'checked' : ''} style="width:auto; margin-right:8px;">${DAY_NAMES[row.day_of_week]}
-          </label>
-          <input type="time" data-field="start_time" value="${esc(row.start_time)}" style="width:auto;">
-          <span>to</span>
-          <input type="time" data-field="end_time" value="${esc(row.end_time)}" style="width:auto;">
-        </div>
-      </div>
-    `).join('');
-  }
-  document.getElementById('save-availability-btn').addEventListener('click', async () => {
-    const container = document.getElementById('availability-list');
-    const note = document.getElementById('availability-note');
-    const cards = container.querySelectorAll('.card[data-id]');
-    const rows = Array.from(cards).map(card => ({
-      day_of_week: Number(card.dataset.id),
-      enabled: card.querySelector('[data-field="enabled"]').checked,
-      start_time: card.querySelector('[data-field="start_time"]').value,
-      end_time: card.querySelector('[data-field="end_time"]').value
-    }));
-    const { error } = await supabase.from('availability_hours').upsert(rows, { onConflict: 'day_of_week' });
-    note.textContent = error ? 'Error: ' + error.message : 'Saved.';
-    if (!error) toast('Saved');
-  });
-
-  // ---------- CONTACTS (CRM: searchable table + navigable detail page) ----------
-  const STATUS_OPTIONS = ['new','contacted','qualified','booked','closed'];
-  let contactsCache = [];
-  let historyByEmail = {};
-  let contactsSearchTerm = '';
-
-  async function loadContacts(){
-    const [{ data: contacts, error }, { data: bookingRows }] = await Promise.all([
-      supabase.from('contacts').select('*').order('updated_at', { ascending: false }),
-      supabase.from('bookings').select('email,preferred_date,preferred_time').order('preferred_date')
-    ]);
-    if (error){ document.getElementById('contacts-tbody').innerHTML = `<tr><td colspan="5" class="hint">Error: ${esc(error.message)}</td></tr>`; return; }
-
-    contactsCache = contacts || [];
-    historyByEmail = {};
-    (bookingRows||[]).forEach(b => {
-      if (!historyByEmail[b.email]) historyByEmail[b.email] = [];
-      historyByEmail[b.email].push(`${b.preferred_date || '?'} ${b.preferred_time || ''}`.trim());
-    });
-
-    renderContactsTable();
-  }
-
-  function renderContactsTable(){
-    const term = contactsSearchTerm.toLowerCase();
-    const filtered = contactsCache.filter(c =>
-      !term || c.name.toLowerCase().includes(term) || c.email.toLowerCase().includes(term)
-    );
-    const tbody = document.getElementById('contacts-tbody');
-    tbody.innerHTML = filtered.map(c => {
-      const count = (historyByEmail[c.email] || []).length;
-      return `
-      <tr>
-        <td><span class="crm-link" data-id="${c.id}">${esc(c.name)}</span></td>
-        <td><span class="crm-link" data-id="${c.id}">${esc(c.email)}</span></td>
-        <td>${esc(c.phone) || '—'}</td>
-        <td><span class="crm-status-badge">${esc(c.status)}</span></td>
-        <td>${count || '—'}</td>
-      </tr>`;
-    }).join('') || `<tr><td colspan="5" class="hint">${contactsCache.length ? 'No matches.' : "No contacts yet — they'll appear automatically once someone books."}</td></tr>`;
-
-    tbody.querySelectorAll('.crm-link').forEach(el => {
-      el.addEventListener('click', () => openContactDetail(Number(el.dataset.id)));
-    });
-  }
-
-  document.getElementById('contacts-search').addEventListener('input', (e) => {
-    contactsSearchTerm = e.target.value;
-    renderContactsTable();
-  });
-
-  function openContactDetail(id, updateHash = true){
-    const c = contactsCache.find(x => x.id === id);
-    if (!c) return;
-    document.getElementById('contacts-table-view').style.display = 'none';
-    document.getElementById('contact-detail-view').style.display = 'block';
-    if (updateHash) location.hash = `panel-contacts:${id}`;
-    renderContactDetail(id);
-  }
-
-  function closeContactDetail(){
-    document.getElementById('contacts-table-view').style.display = 'block';
-    document.getElementById('contact-detail-view').style.display = 'none';
-    location.hash = 'panel-contacts';
-  }
-  document.getElementById('contact-back-btn').addEventListener('click', closeContactDetail);
-
-  function renderContactDetail(id){
-    const c = contactsCache.find(x => x.id === id);
-    const detail = document.getElementById('contact-detail');
-    if (!c) return;
-
-    const history = historyByEmail[c.email] || [];
-    detail.innerHTML = `
-      <h2 style="margin-bottom:18px;">${esc(c.name)}</h2>
-      <div class="field-grid">
-        <div><label>Name</label><input id="detail-name" value="${esc(c.name)}"></div>
-        <div><label>Email</label><input id="detail-email" value="${esc(c.email)}"></div>
-      </div>
-      <div class="field-grid">
-        <div><label>Phone</label><input id="detail-phone" value="${esc(c.phone)}"></div>
-        <div><label>Status</label>
-          <select id="detail-status">
-            ${STATUS_OPTIONS.map(s => `<option value="${s}" ${c.status===s?'selected':''}>${s}</option>`).join('')}
-          </select>
-        </div>
-      </div>
-      <label>Notes</label><textarea id="detail-notes">${esc(c.notes)}</textarea>
-      <p class="hint" style="margin-top:10px;">
-        ${history.length ? `${history.length} booking${history.length>1?'s':''}: ${history.map(esc).join(' · ')}` : 'No bookings yet — added manually'}
-        &middot; source: ${esc(c.source || 'unknown')}
-      </p>
-      <div class="row" style="margin-top:14px;">
-        <button class="primary" id="detail-save-btn">Save</button>
-        <button class="danger" id="detail-delete-btn">Delete</button>
-        <span class="save-note" id="detail-note"></span>
-      </div>
-    `;
-
-    document.getElementById('detail-save-btn').addEventListener('click', async () => {
-      const note = document.getElementById('detail-note');
-      const payload = {
-        name: document.getElementById('detail-name').value,
-        email: document.getElementById('detail-email').value,
-        phone: document.getElementById('detail-phone').value || null,
-        status: document.getElementById('detail-status').value,
-        notes: document.getElementById('detail-notes').value || null,
-        updated_at: new Date().toISOString()
-      };
-      const { error } = await supabase.from('contacts').update(payload).eq('id', id);
-      note.textContent = error ? 'Error: ' + error.message : 'Saved.';
-      if (!error){ toast('Saved'); loadContacts(); }
-    });
-
-    document.getElementById('detail-delete-btn').addEventListener('click', async () => {
-      if (!confirm('Delete this contact? (Their past bookings stay on record — this just removes the CRM entry.)')) return;
-      const { error } = await supabase.from('contacts').delete().eq('id', id);
-      if (!error){
-        toast('Deleted');
-        closeContactDetail();
-        loadContacts();
-      } else toast('Error: ' + error.message);
-    });
-  }
-
-  document.getElementById('add-contact-btn').addEventListener('click', async () => {
-    const name = document.getElementById('new-contact-name').value.trim();
-    const email = document.getElementById('new-contact-email').value.trim();
-    const phone = document.getElementById('new-contact-phone').value.trim();
-    if (!name || !email){ toast('Name and email required'); return; }
-    const { error } = await supabase.from('contacts').insert({ name, email, phone: phone || null, source: 'manual' });
-    if (!error){
-      ['name','email','phone'].forEach(f => document.getElementById('new-contact-'+f).value = '');
-      loadContacts();
-      toast('Added');
-    } else toast('Error: ' + error.message);
-  });
-
-  // ---------- BOOKINGS (calendar view) ----------
-  let bkBookingsByDate = {}; // { 'YYYY-MM-DD': [booking, ...] }
-  let bkViewMonth = new Date(); bkViewMonth.setDate(1);
-  let bkSelectedDate = null;
-
-  function ymd(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
-
-  async function loadBookings(){
-    const { data, error } = await supabase.from('bookings').select('*').order('preferred_date');
-    if (error){ toast('Error loading bookings: ' + error.message); return; }
-    bkBookingsByDate = {};
-    (data||[]).forEach(b => {
-      const key = b.preferred_date || 'unscheduled';
-      if (!bkBookingsByDate[key]) bkBookingsByDate[key] = [];
-      bkBookingsByDate[key].push(b);
-    });
-    renderBkCalendar();
-    if (bkSelectedDate) renderBkDay(bkSelectedDate);
-  }
-
-  function renderBkCalendar(){
-    const year = bkViewMonth.getFullYear(), month = bkViewMonth.getMonth();
-    document.getElementById('bk-cal-month-label').textContent = bkViewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    const firstDay = new Date(year, month, 1);
-    const startOffset = firstDay.getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    let html = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="cal-daylabel-admin">${d}</div>`).join('');
-    for (let i = 0; i < startOffset; i++) html += '<div class="cal-day-admin"></div>';
-    for (let day = 1; day <= daysInMonth; day++){
-      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-      const hasBookings = !!bkBookingsByDate[dateStr]?.length;
-      const isSelected = dateStr === bkSelectedDate;
-      html += `<button type="button" class="cal-day-admin ${hasBookings ? 'has-bookings' : ''} ${isSelected ? 'selected' : ''}" data-date="${dateStr}">${day}</button>`;
-    }
-    document.getElementById('bk-cal-grid').innerHTML = html;
-    document.querySelectorAll('#bk-cal-grid .cal-day-admin[data-date]').forEach(btn => {
-      btn.addEventListener('click', () => { bkSelectedDate = btn.dataset.date; renderBkCalendar(); renderBkDay(btn.dataset.date); });
-    });
-  }
-
-  function renderBkDay(dateStr){
-    const bookings = bkBookingsByDate[dateStr] || [];
-    document.getElementById('bk-day-heading').textContent = dateStr;
-    const container = document.getElementById('bk-day-list');
-    container.innerHTML = bookings.map(b => `
-      <div class="card bk-day-card" data-id="${b.id}">
-        <div class="field-grid">
-          <div><label>Name</label><input data-field="name" value="${esc(b.name)}"></div>
-          <div><label>Email</label><input data-field="email" value="${esc(b.email)}"></div>
-        </div>
-        <div class="field-grid">
-          <div><label>Time</label><input data-field="preferred_time" value="${esc(b.preferred_time)}"></div>
-          <div><label>Date</label><input data-field="preferred_date" type="date" value="${esc(b.preferred_date)}"></div>
-        </div>
-        <label>Notes</label><textarea data-field="message">${esc(b.message)}</textarea>
-        <div class="row" style="margin-top:10px;">
-          <button class="danger" data-delete>Delete</button>
-        </div>
-      </div>
-    `).join('') || `<p class="hint">No bookings this day.</p>`;
-
-    container.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async (e) => {
-      const card = e.target.closest('.card');
-      if (!confirm('Delete this booking?')) return;
-      const { error } = await supabase.from('bookings').delete().eq('id', card.dataset.id);
-      if (!error){ toast('Deleted'); loadBookings(); } else toast('Error: ' + error.message);
-    }));
-  }
-
-  document.getElementById('bk-cal-prev').addEventListener('click', () => { bkViewMonth.setMonth(bkViewMonth.getMonth()-1); renderBkCalendar(); });
-  document.getElementById('bk-cal-next').addEventListener('click', () => { bkViewMonth.setMonth(bkViewMonth.getMonth()+1); renderBkCalendar(); });
-
-  document.getElementById('save-bookings-btn').addEventListener('click', async () => {
-    const note = document.getElementById('bookings-note');
-    const cards = document.querySelectorAll('#bk-day-list .card[data-id]');
-    if (!cards.length){ note.textContent = 'Nothing to save.'; return; }
-    const rows = Array.from(cards).map(card => ({
-      id: Number(card.dataset.id),
-      name: card.querySelector('[data-field="name"]').value,
-      email: card.querySelector('[data-field="email"]').value,
-      preferred_time: card.querySelector('[data-field="preferred_time"]').value,
-      preferred_date: card.querySelector('[data-field="preferred_date"]').value,
-      message: card.querySelector('[data-field="message"]').value
-    }));
-    const { error } = await supabase.from('bookings').upsert(rows);
-    note.textContent = error ? 'Error: ' + error.message : 'Saved.';
-    if (!error){ toast('Saved'); loadBookings(); }
-  });
-
-  document.getElementById('add-booking-btn').addEventListener('click', async () => {
-    if (!bkSelectedDate){ toast('Pick a date on the calendar first'); return; }
-    const name = document.getElementById('new-booking-name').value.trim();
-    const email = document.getElementById('new-booking-email').value.trim();
-    const time = document.getElementById('new-booking-time').value.trim();
-    const notes = document.getElementById('new-booking-notes').value.trim();
-    if (!name || !email){ toast('Name and email required'); return; }
-    const { error } = await supabase.from('bookings').insert({
-      name, email, preferred_date: bkSelectedDate, preferred_time: time, message: notes || null
-    });
-    if (!error){
-      ['name','email','time','notes'].forEach(f => document.getElementById('new-booking-'+f).value = '');
-      loadBookings();
-      toast('Added');
-    } else toast('Error: ' + error.message);
-  });
-
-  async function loadAll(){
-    await Promise.all([
-      loadSiteContent(), heroBadges.load(), loadSolutions(), loadProjects(), loadStackItems(), loadStats(), loadBookings(), loadAvailability(), loadIntegrations(), loadContacts()
-    ]);
-    const { data: heroData } = await supabase.from('site_content').select('value').eq('key','hero_photo_url').maybeSingle();
-    if (heroData?.value){
-      document.getElementById('photo-preview').src = heroData.value;
-      document.getElementById('photo-preview').style.display = 'block';
-    }
-    const { data: favData } = await supabase.from('site_content').select('value').eq('key','favicon_url').maybeSingle();
-    if (favData?.value){
-      document.getElementById('favicon-preview').src = favData.value;
-      document.getElementById('favicon-preview').style.display = 'block';
-    }
-    const { data: logoData } = await supabase.from('site_content').select('value').eq('key','header_logo_url').maybeSingle();
-    if (logoData?.value){
-      document.getElementById('logo-preview').src = logoData.value;
-      document.getElementById('logo-preview').style.display = 'block';
-    }
-  }
-
-  checkSession();
-</script>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<dialog id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+  <form method="dialog" class="confirm-inner">
+    <div class="confirm-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+    </div>
+    <h2 id="confirm-title">Delete this item?</h2>
+    <p id="confirm-message"></p>
+    <div class="row confirm-actions">
+      <button value="cancel" id="confirm-cancel">Cancel</button>
+      <button value="confirm" class="danger-solid" id="confirm-ok">Delete</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module" src="js/admin.js"></script>
 </body>
 </html>
