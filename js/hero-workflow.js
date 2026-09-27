@@ -35,20 +35,14 @@ window.setHeroPhoto = function setHeroPhoto(url, initialsText){
     // 1) Chat: Messenger / WhatsApp → AI Agent (model + parser) → Send Reply → AI Agent (model + parser) → Book Appointment
     {id:'msgr',  svg:'chat',  x:44,  y:64,  icon:'msgr',  name:'Messenger',        desc:'on new message', trigger:true},
     {id:'wa',    svg:'chat',  x:44,  y:184, icon:'wa',    name:'WhatsApp',         desc:'on new message', trigger:true},
-    {id:'agent', svg:'chat',  x:190, y:124, icon:'agent', name:'AI Agent',         desc:'understand', wide:true,
-      subs:[{id:'a1', port:'Model',  icon:'llm',    label:'Model',  sdesc:'Claude'},
-            {id:'a2', port:'Parser', icon:'parser', label:'Parser', sdesc:'JSON'}]},
-    {id:'reply', svg:'chat',  x:326, y:124, icon:'reply', name:'Send Reply',       desc:'same channel'},
-    {id:'agent2',svg:'chat',  x:462, y:124, icon:'agent', name:'AI Agent',         desc:'schedule', wide:true,
-      subs:[{id:'b1', port:'Model',  icon:'llm',    label:'Model',  sdesc:'Claude'},
-            {id:'b2', port:'Parser', icon:'parser', label:'Parser', sdesc:'JSON'}]},
+    {id:'agent', svg:'chat',  x:210, y:124, icon:'agent', bare:true},
+    {id:'reply', svg:'chat',  x:340, y:124, icon:'reply', bare:true},
+    {id:'agent2',svg:'chat',  x:470, y:124, icon:'agent', bare:true},
     {id:'book',  svg:'chat',  x:612, y:124, icon:'book',  name:'Book Appointment', desc:'call or visit'},
     // 2) AI voice receptionist (model + parser) → Check Slots → Book Appointment
     {id:'call',  svg:'voice', x:60,  y:124, icon:'phone', name:'Incoming Call',    desc:'business line', trigger:true},
-    {id:'voice', svg:'voice', x:214, y:124, icon:'voice', name:'Voice Agent',      desc:'receptionist', wide:true,
-      subs:[{id:'v1', port:'Model',  icon:'voice',  label:'Model',  sdesc:'realtime'},
-            {id:'v2', port:'Parser', icon:'parser', label:'Parser', sdesc:'JSON'}]},
-    {id:'slots', svg:'voice', x:392, y:124, icon:'slots', name:'Check Slots',      desc:'GHL calendar'},
+    {id:'voice', svg:'voice', x:230, y:124, icon:'voice', bare:true},
+    {id:'slots', svg:'voice', x:390, y:124, icon:'slots', bare:true},
     {id:'book2', svg:'voice', x:548, y:124, icon:'book',  name:'Book Appointment', desc:'+ SMS confirm'}
   ];
   const EDGES = [['msgr','agent'],['wa','agent'],['agent','reply'],['reply','agent2'],['agent2','book'],['call','voice'],['voice','slots'],['slots','book2']];
@@ -83,7 +77,7 @@ window.setHeroPhoto = function setHeroPhoto(url, initialsText){
         out += `<rect class="diamond" x="${dx-4.5}" y="${h/2-4.5}" width="9" height="9" transform="rotate(45 ${dx} ${h/2})"/>`;
         out += `<text class="port" x="${dx}" y="${h/2+16}" text-anchor="middle">${sub.port}</text>`;
       });
-    } else {
+    } else if (!n.bare) {
       out += `<text class="name" x="0" y="${h/2+20}" text-anchor="middle">${n.name}</text>`;
       out += `<text class="desc" x="0" y="${h/2+34}" text-anchor="middle">${n.desc}</text>`;
     }
@@ -177,13 +171,8 @@ window.setHeroPhoto = function setHeroPhoto(url, initialsText){
   }
   // agent node spins while each sub-node (LLM → analyzer → parser) does its part
   async function runAgent(id, steps){
-    const n = byId[id];
     nodeEls[id].classList.add('running');
-    for (let i = 0; i < n.subs.length; i++){
-      const sub = n.subs[i], el = subEls[sub.id];
-      el.classList.add('running'); say(steps[i]); await wait(900);
-      el.classList.remove('running'); el.classList.add('done'); linkEls[sub.id].classList.add('done');
-    }
+    for (const step of steps){ say(step); await wait(850); }
     nodeEls[id].classList.remove('running'); nodeEls[id].classList.add('done');
   }
 
@@ -200,7 +189,7 @@ window.setHeroPhoto = function setHeroPhoto(url, initialsText){
     {who:'caller from Davao',     json:'{type:"call", topic:"pricing", time:"Fri 09:00"}',   booked:'call back · Fri 9:00 AM'}
   ];
   async function flowChat(C){
-    const ids = ['msgr','wa','agent','a1','a2','reply','agent2','b1','b2','book'], keys = ['msgr>agent','wa>agent','agent>reply','reply>agent2','agent2>book'];
+    const ids = ['msgr','wa','agent','reply','agent2','book'], keys = ['msgr>agent','wa>agent','agent>reply','reply>agent2','agent2>book'];
     reset(ids); resetEdges(keys);
     await run(C.src, `${C.ch} from <b>${C.who}</b>: “${C.msg}”`, 800);
     await sendPacket(C.src + '>agent', 800);
@@ -213,7 +202,7 @@ window.setHeroPhoto = function setHeroPhoto(url, initialsText){
     await run('book', `booked · <span class="hl">${C.booked}</span> ✓`);
   }
   async function flowVoice(V){
-    const ids = ['call','voice','v1','v2','slots','book2'], keys = ['call>voice','voice>slots','slots>book2'];
+    const ids = ['call','voice','slots','book2'], keys = ['call>voice','voice>slots','slots>book2'];
     reset(ids); resetEdges(keys);
     await run('call', `incoming call · <b>${V.who}</b>`, 800);
     await sendPacket('call>voice', 800);
