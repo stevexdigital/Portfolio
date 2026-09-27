@@ -279,20 +279,14 @@ async function loadSite(){
 
     const initialsText = initials(c.hero_name);
     const heroPhotoUrl = safeUrl(c.hero_photo_url);
+    if (window.setHeroPhoto) window.setHeroPhoto(heroPhotoUrl, initialsText);
     if (heroPhotoUrl){
-      document.getElementById('hero-photo-wrap').innerHTML = `<img src="${esc(heroPhotoUrl)}" alt="${esc(c.hero_name || 'Profile photo')}">`;
       document.getElementById('about-photo-img').src = heroPhotoUrl;
       document.getElementById('about-photo-img').style.display = 'block';
       document.getElementById('about-photo-placeholder').style.display = 'none';
     } else {
-      document.getElementById('hero-photo-placeholder').textContent = initialsText;
       document.getElementById('about-photo-placeholder').textContent = initialsText;
     }
-
-    const badgeClasses = ['b1','b2','b3'];
-    document.getElementById('hero-badges').innerHTML = (badges||[]).slice(0,3).map((b,i) => `
-      <div class="badge-chip ${badgeClasses[i] || ''}"><span class="dot"></span>${esc(b.label)}</div>
-    `).join('');
 
     const marqueeItems = (list) => list.map(s => `<span class="marquee-item">${logoMark(s.label,34,s.logo_url)}${esc(s.label)}<span class="sep">/</span></span>`).join('');
     const marqueeTrack = document.getElementById('marquee-track');
