@@ -106,6 +106,10 @@ create trigger trg_sync_contact_from_booking
 after insert on public.bookings
 for each row execute function public.sync_contact_from_booking();
 
+-- The function above runs with elevated rights, so don't let anyone call it directly
+-- through the API (/rest/v1/rpc/...). The trigger keeps working without this grant.
+revoke execute on function public.sync_contact_from_booking() from public, anon, authenticated;
+
 -- ---------- Security: public can read everything, only logged-in you can write ----------
 alter table public.site_content enable row level security;
 alter table public.hero_badges enable row level security;
